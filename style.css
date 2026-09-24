@@ -1,0 +1,208 @@
+:root{
+  --night:#17233B;
+  --night-2:#223657;
+  --gold:#FFD166;
+  --gold-deep:#E9A820;
+  --pirate:#E5383B;
+  --aqua:#7BDFF2;
+  --paper:#F3E5B8;
+  --foam:#FFFDF5;
+  --ink:#22314E;
+  --muted:#B7C3DA;
+  --radius-lg:22px;
+  --shadow-ship:0 18px 50px rgba(0,0,0,.35);
+  --crew:#E5383B;
+  --crew-deep:#8E1B1E;
+}
+body[data-crew="luffy"]{--crew:#E5383B; --crew-deep:#8E1B1E}
+body[data-crew="zoro"]{--crew:#2FBF71; --crew-deep:#14532D}
+body[data-crew="nami"]{--crew:#FF9F1C; --crew-deep:#8A4B00}
+body[data-crew="sanji"]{--crew:#58A6FF; --crew-deep:#1D3FA0}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:"Nunito",system-ui,-apple-system,sans-serif;
+  background:var(--night);
+  color:var(--foam);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+  line-height:1.55;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .5s ease;
+}
+body[data-mode="short"]{background:#14344A}
+body[data-mode="long"]{background:#3A2E18}
+/* ---- photo scene (real character photos, cinematic but readable) ---- */
+.scene{position:fixed; inset:0; z-index:0; overflow:hidden; background:var(--night)}
+.scene img{width:100%; height:100%; object-fit:cover; object-position:50% 40%; display:block; opacity:1; transition:opacity .5s ease}
+.scene.fading img{opacity:0}
+.scene .scrim{position:absolute; inset:0; background:linear-gradient(180deg, rgba(10,16,30,.60) 0%, rgba(10,16,30,.74) 55%, rgba(10,16,30,.86) 100%)}
+.scene .scrim::after{content:""; position:absolute; inset:0; background:radial-gradient(120% 90% at 50% 30%, transparent 40%, rgba(0,0,0,.45) 100%)}
+body[data-crew="luffy"] .scene img{object-position:50% 42%}
+body[data-crew="zoro"] .scene img{object-position:68% 28%}
+body[data-crew="nami"] .scene img{object-position:50% 22%}
+body[data-crew="sanji"] .scene img{object-position:50% 24%}
+.wrap, .toast{position:relative; z-index:1}
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none;
+  background-image:
+    radial-gradient(circle at 18% 8%, rgba(123,223,242,.13) 0 170px, transparent 171px),
+    radial-gradient(circle at 88% 86%, rgba(255,209,102,.11) 0 210px, transparent 211px),
+    linear-gradient(rgba(255,253,245,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,253,245,.045) 1px, transparent 1px);
+  background-size:auto,auto,54px 54px,54px 54px;
+}
+button{font:inherit}
+:focus-visible{outline:3px solid var(--gold); outline-offset:3px; border-radius:10px}
+
+.wrap{max-width:1060px; margin:0 auto; padding:22px 20px 0; position:relative; width:100%}
+/* ---- header ---- */
+.mast{display:flex; align-items:center; justify-content:space-between; gap:12px 16px; padding:6px 2px 20px; flex-wrap:wrap}
+.brand{display:flex; align-items:center; gap:12px; min-width:0; flex:1 1 240px}
+.flag{width:48px; height:48px; border-radius:50%; background:var(--foam); display:grid; place-items:center; border:3px solid var(--crew); box-shadow:0 4px 0 rgba(0,0,0,.35); flex:none; transition:border-color .3s ease}
+.brand h1{font-family:"Pirata One",serif; font-weight:400; font-size:30px; line-height:1; margin:0; letter-spacing:.5px; white-space:nowrap}
+.brand p{margin:3px 0 0; color:var(--muted); font-size:13.5px; font-weight:700; max-width:44ch}
+.voyage{display:flex; align-items:center; gap:9px; background:rgba(255,253,245,.09); border:1px solid rgba(255,253,245,.17); padding:9px 15px; border-radius:999px; font-weight:800; font-size:14px; white-space:nowrap; flex:none}
+.voyage .dot{width:9px; height:9px; border-radius:50%; background:var(--crew); box-shadow:0 0 12px var(--crew); flex:none; transition:background .3s ease}
+
+/* ---- crew picker ---- */
+.crew{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 2px 18px; flex-wrap:wrap}
+.crew-label{margin:0; color:var(--muted); font-size:14px; font-weight:700}
+.crew-label strong{color:var(--foam); font-weight:900}
+.crew-pick{display:flex; gap:8px; flex-wrap:wrap}
+.crew-btn{display:flex; align-items:center; gap:8px; border:1px solid rgba(255,253,245,.16); background:rgba(255,253,245,.06); color:var(--foam); border-radius:999px; padding:6px 14px 6px 6px; font-weight:800; font-size:14px; cursor:pointer; min-height:48px}
+.crew-btn .avatar{width:36px; height:36px; border-radius:50%; display:grid; place-items:center; background:var(--a); color:#fff; font-family:"Pirata One",serif; font-size:20px; line-height:1; flex:none; border:2px solid rgba(255,255,255,.7)}
+.crew-btn[aria-pressed="true"]{background:var(--foam); color:var(--ink); border-color:var(--foam)}
+.crew-btn:hover{background:rgba(255,253,245,.14)}
+.crew-btn[aria-pressed="true"]:hover{background:var(--foam)}
+
+/* ---- layout ---- */
+.stage{display:grid; grid-template-columns:1.05fr .95fr; gap:26px; align-items:start}
+.pose-card{
+  background:linear-gradient(160deg, rgba(255,255,255,.09) 0%, rgba(255,255,255,.04) 55%, color-mix(in srgb, var(--crew) 10%, transparent));
+  background-color:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.16); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-ship), inset 0 1px 0 rgba(255,255,255,.22); padding:22px 22px 20px; text-align:center;
+  position:relative; overflow:hidden; min-width:0;
+  -webkit-backdrop-filter:blur(24px) saturate(150%); backdrop-filter:blur(24px) saturate(150%);
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .pose-card{background:linear-gradient(180deg,#23395E 0%,#1A2B4A 100%)}
+}
+.modes{display:flex; width:100%; max-width:430px; margin:0 auto; border-radius:999px; padding:5px; gap:4px;
+  background:rgba(8,14,30,.45); border:1px solid rgba(255,255,255,.14); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px)}
+.modes button{flex:1 1 0; border:0; background:transparent; color:var(--muted); padding:11px 6px; border-radius:999px; font-weight:800; font-size:14px; cursor:pointer; white-space:nowrap; min-height:44px}
+.modes button[aria-selected="true"]{background:var(--foam); color:var(--ink)}
+
+/* dial — the memorable thing */
+.dial-wrap{position:relative; width:min(340px,78vw); margin:24px auto 10px}
+.straw-ring{position:absolute; inset:-13px; border-radius:50%; border:3px dashed rgba(255,209,102,.55)}
+.straw-ring::before{
+  content:""; position:absolute; inset:7px; border-radius:50%;
+  border:9px solid transparent; border-top-color:var(--gold-deep);
+  border-left-color:var(--gold); border-right-color:var(--gold); border-bottom-color:#B97A0F; opacity:.9;
+  mask:radial-gradient(circle,transparent 62%,black 63%);
+  -webkit-mask:radial-gradient(circle,transparent 62%,black 63%);
+}
+.dial{position:relative; aspect-ratio:1; border-radius:50%; background:radial-gradient(circle at 50% 34%,rgba(255,255,255,.10) 0%,rgba(255,255,255,.03) 64%); border:1px solid rgba(255,255,255,.22); display:grid; place-items:center; overflow:hidden; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px)}
+.dial::before{content:""; position:absolute; top:8%; left:18%; width:64%; height:32%; border-radius:50%; background:linear-gradient(180deg,rgba(255,255,255,.22),transparent); pointer-events:none}
+svg.progress{position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg)}
+.time-block{position:relative; z-index:2; padding:0 12px; max-width:100%; text-shadow:0 2px 14px rgba(0,0,0,.6); display:grid; place-items:center}
+.time{font-family:"DotGothic16",monospace; font-weight:400; font-size:clamp(72px,17vw,102px); line-height:1; margin:0; letter-spacing:2px}
+.quote{color:#CBD6EA; font-size:13px; margin:12px auto 0; font-weight:600; max-width:34ch; line-height:1.5; text-align:center; position:relative; z-index:2; text-shadow:0 1px 8px rgba(0,0,0,.5)}
+
+.controls{display:flex; gap:10px; justify-content:center; margin:16px 0 6px; position:relative; z-index:2; flex-wrap:wrap}
+.btn{border:0; border-radius:999px; padding:14px 26px; font-family:"DotGothic16",monospace; font-size:19px; letter-spacing:.5px; cursor:pointer; min-height:52px; transition:transform .15s ease,background .2s ease}
+.btn:active{transform:translateY(1px) scale(.99)}
+.btn-primary{background:linear-gradient(180deg,rgba(255,225,140,.92),rgba(255,209,102,.88)); color:#3A2A00; box-shadow:0 5px 0 rgba(154,107,10,.85),0 12px 24px rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.35); flex:1 1 180px; max-width:260px}
+.btn-primary:hover{background:linear-gradient(180deg,#FFE89A,#FFD166)}
+.btn-ghost{background:rgba(255,253,245,.08); color:var(--foam); border:1px solid rgba(255,255,255,.25); padding:13px 20px; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); flex:0 1 auto}
+.modes button{font-family:"DotGothic16",monospace; font-size:16px; letter-spacing:.5px}
+.tiny-row{display:flex; justify-content:center; gap:8px 20px; margin-top:8px; position:relative; z-index:2; flex-wrap:wrap}
+.tiny-row button{background:none; border:0; color:var(--muted); font-weight:800; font-size:14px; cursor:pointer; text-decoration:underline; text-underline-offset:4px; padding:10px 6px; min-height:44px}
+.durations{display:flex; gap:8px; justify-content:center; margin-top:14px; position:relative; z-index:2; flex-wrap:wrap}
+.durations label{display:flex; align-items:center; gap:8px; background:rgba(8,14,30,.4); border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:8px 10px; font-size:13px; font-weight:800; color:#CBD6EA; min-height:48px; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px)}
+.durations input{width:56px; background:var(--foam); border:0; border-radius:8px; padding:8px; font:inherit; font-size:16px; font-weight:900; color:var(--ink); text-align:center}
+
+/* wanted poster */
+.poster{
+  background:
+    repeating-linear-gradient(0deg,rgba(74,58,26,.05) 0 2px,transparent 2px 26px),
+    var(--paper);
+  color:#2B2112; border-radius:6px; border:3px double #4A3A1A;
+  outline:6px solid var(--paper); outline-offset:-2px;
+  box-shadow:var(--shadow-ship); padding:22px 18px 16px; position:relative; min-width:0;
+}
+.poster::before,.poster::after{content:""; position:absolute; width:74px; height:22px; background:rgba(214,178,106,.92); top:-13px; border:1px solid rgba(0,0,0,.16)}
+.poster::before{left:26px; transform:rotate(-6deg)} .poster::after{right:26px; transform:rotate(6deg)}
+.poster h2{font-family:"Pirata One",serif; font-weight:400; font-size:42px; line-height:.9; margin:2px 0 0; text-align:center; letter-spacing:1px}
+.poster .sub{text-align:center; font-weight:800; font-size:13px; margin:6px 0 12px; color:#6B5630; max-width:40ch; margin-inline:auto}
+.skulls{display:flex; justify-content:center; gap:10px; margin:0 0 14px; flex-wrap:wrap}
+.skull{width:38px; height:38px; border-radius:50%; display:grid; place-items:center; border:2px solid #4A3A1A; color:#4A3A1A}
+.skull.done{background:var(--crew-deep); border-color:var(--crew-deep); color:var(--crew)}
+.add-row{display:flex; gap:8px; margin-bottom:12px}
+.add-row input{flex:1; min-width:0; border:2px solid #4A3A1A; border-radius:10px; background:#FFF9E3; padding:12px; font:inherit; font-size:16px; font-weight:700; color:#2B2112}
+.add-row button{background:#2B2112; color:var(--paper); border:0; border-radius:10px; padding:0 20px; font-weight:900; font-size:16px; cursor:pointer; min-height:50px; flex:none}
+ul.bounties{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; max-height:320px; overflow:auto}
+ul.bounties li{display:flex; align-items:center; gap:10px; background:#FFF9E3; border:1.5px solid #4A3A1A; border-radius:10px; padding:9px 10px}
+ul.bounties li.done{opacity:.62} ul.bounties li.done .name{text-decoration:line-through}
+.check{width:34px; height:34px; border-radius:50%; border:2px solid #4A3A1A; background:#fff; cursor:pointer; display:grid; place-items:center; flex:none; font-weight:900; font-size:15px}
+li.done .check{background:#2B2112; color:var(--gold)}
+.name{flex:1; min-width:0; font-weight:700; font-size:15px; border:0; background:transparent; color:inherit; text-align:left; cursor:pointer; overflow-wrap:anywhere}
+.berry{font-weight:900; font-size:12px; background:var(--crew-deep); color:#fff; border-radius:999px; padding:4px 9px; white-space:nowrap; flex:none; transition:background .3s ease}
+.del{border:0; background:none; cursor:pointer; font-size:20px; line-height:1; padding:8px; color:#8A764F; min-width:44px; min-height:44px}
+.empty{border:1.5px dashed #8A764F; border-radius:10px; padding:14px; text-align:center; font-size:14px; color:#6B5630; font-weight:600}
+
+footer{padding:26px 10px calc(34px + env(safe-area-inset-bottom)); text-align:center; color:var(--muted); font-size:13.5px; font-weight:600; max-width:62ch; margin:0 auto}
+footer strong{color:var(--foam)}
+.toast{position:fixed; left:50%; bottom:calc(18px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(20px); background:var(--foam); color:var(--ink); font-weight:800; font-size:14px; padding:13px 20px; border-radius:999px; border:3px solid var(--gold); opacity:0; pointer-events:none; transition:all .25s ease; z-index:50; max-width:min(92vw,480px); text-align:center}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+@keyframes spin-in{from{transform:rotate(-14deg) scale(.96); opacity:0} to{transform:rotate(0) scale(1); opacity:1}}
+.dial-wrap{animation:spin-in .6s ease both}
+
+/* ---- tablets ---- */
+@media (max-width:920px){
+  .stage{grid-template-columns:1fr; gap:22px}
+  .poster{max-width:640px; margin:0 auto; width:100%}
+  .pose-card{max-width:640px; margin:0 auto; width:100%}
+}
+/* ---- phones ---- */
+@media (max-width:600px){
+  .wrap{padding:16px 14px 0}
+  .mast{padding-bottom:12px}
+  .crew{padding-bottom:14px}
+  .crew-pick{width:100%; display:grid; grid-template-columns:1fr 1fr; gap:8px}
+  .crew-btn{justify-content:flex-start}
+  .brand h1{font-size:26px}
+  .brand p{font-size:12.5px}
+  .voyage{font-size:13px; padding:8px 12px}
+  .pose-card{padding:18px 14px 16px; border-radius:18px}
+  .modes button{font-size:13px; padding:11px 4px}
+  .dial-wrap{width:min(300px,82vw); margin-top:20px}
+  .quote{font-size:12.5px}
+  .controls{flex-direction:row; align-items:center; gap:8px}
+  .btn{min-height:46px; padding:10px 14px; font-size:17px}
+  .btn-primary{max-width:none; width:auto; flex:1.5}
+  .btn-ghost{width:auto; flex:1; padding:10px 12px; font-size:16px}
+  .poster{padding:20px 14px 14px}
+  .poster h2{font-size:36px}
+  ul.bounties{max-height:260px}
+}
+@media (max-width:360px){
+  .time{font-size:68px}
+  .durations label{flex:1 1 100%; justify-content:space-between}
+}
+@media (prefers-reduced-motion:reduce){
+  .dial-wrap{animation:none} .btn,.toast{transition:none} body{transition:none}
+  .scene img{transition:none}
+}
+@media (max-width:600px){
+  .scene .scrim{background:linear-gradient(180deg, rgba(10,16,30,.66) 0%, rgba(10,16,30,.80) 55%, rgba(10,16,30,.90) 100%)}
+  body[data-crew="zoro"] .scene img{object-position:62% 26%}
+  body[data-crew="nami"] .scene img{object-position:50% 14%}
+  body[data-crew="sanji"] .scene img{object-position:50% 16%}
+}
