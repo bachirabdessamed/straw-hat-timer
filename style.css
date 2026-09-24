@@ -97,30 +97,21 @@ button{font:inherit}
 .modes button{flex:1 1 0; border:0; background:transparent; color:var(--muted); padding:11px 6px; border-radius:999px; font-weight:800; font-size:14px; cursor:pointer; white-space:nowrap; min-height:44px}
 .modes button[aria-selected="true"]{background:var(--foam); color:var(--ink)}
 
-/* dial — the memorable thing */
-.dial-wrap{position:relative; width:min(340px,78vw); margin:24px auto 10px}
-.straw-ring{position:absolute; inset:-13px; border-radius:50%; border:3px dashed rgba(255,209,102,.55)}
-.straw-ring::before{
-  content:""; position:absolute; inset:7px; border-radius:50%;
-  border:9px solid transparent; border-top-color:var(--gold-deep);
-  border-left-color:var(--gold); border-right-color:var(--gold); border-bottom-color:#B97A0F; opacity:.9;
-  mask:radial-gradient(circle,transparent 62%,black 63%);
-  -webkit-mask:radial-gradient(circle,transparent 62%,black 63%);
-}
-.dial{position:relative; aspect-ratio:1; border-radius:50%; background:radial-gradient(circle at 50% 34%,rgba(255,255,255,.10) 0%,rgba(255,255,255,.03) 64%); border:1px solid rgba(255,255,255,.22); display:grid; place-items:center; overflow:hidden; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px)}
-.dial::before{content:""; position:absolute; top:8%; left:18%; width:64%; height:32%; border-radius:50%; background:linear-gradient(180deg,rgba(255,255,255,.22),transparent); pointer-events:none}
+/* dial — quiet disc, thin crew ring */
+.dial-wrap{position:relative; width:min(320px,78vw); margin:24px auto 10px}
+.dial{position:relative; aspect-ratio:1; border-radius:50%; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.16); display:grid; place-items:center; overflow:hidden; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px)}
 svg.progress{position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg)}
 .time-block{position:relative; z-index:2; padding:0 12px; max-width:100%; text-shadow:0 2px 14px rgba(0,0,0,.6); display:grid; place-items:center}
-.time{font-family:"DotGothic16",monospace; font-weight:400; font-size:clamp(72px,17vw,102px); line-height:1; margin:0; letter-spacing:2px}
+.time{font-family:"Nunito",system-ui,-apple-system,sans-serif; font-weight:300; font-size:clamp(68px,16vw,96px); line-height:1; margin:0; letter-spacing:.04em; font-variant-numeric:tabular-nums}
 .quote{color:#CBD6EA; font-size:13px; margin:12px auto 0; font-weight:600; max-width:34ch; line-height:1.5; text-align:center; position:relative; z-index:2; text-shadow:0 1px 8px rgba(0,0,0,.5)}
 
 .controls{display:flex; gap:10px; justify-content:center; margin:16px 0 6px; position:relative; z-index:2; flex-wrap:wrap}
-.btn{border:0; border-radius:999px; padding:14px 26px; font-family:"DotGothic16",monospace; font-size:19px; letter-spacing:.5px; cursor:pointer; min-height:52px; transition:transform .15s ease,background .2s ease}
+.btn{border:0; border-radius:999px; padding:14px 26px; font-family:"Nunito",system-ui,-apple-system,sans-serif; font-weight:800; font-size:17px; letter-spacing:.02em; cursor:pointer; min-height:52px; transition:transform .15s ease,background .2s ease}
 .btn:active{transform:translateY(1px) scale(.99)}
 .btn-primary{background:linear-gradient(180deg,rgba(255,225,140,.92),rgba(255,209,102,.88)); color:#3A2A00; box-shadow:0 5px 0 rgba(154,107,10,.85),0 12px 24px rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.35); flex:1 1 180px; max-width:260px}
 .btn-primary:hover{background:linear-gradient(180deg,#FFE89A,#FFD166)}
 .btn-ghost{background:rgba(255,253,245,.08); color:var(--foam); border:1px solid rgba(255,255,255,.25); padding:13px 20px; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); flex:0 1 auto}
-.modes button{font-family:"DotGothic16",monospace; font-size:16px; letter-spacing:.5px}
+.modes button{font-family:"Nunito",system-ui,-apple-system,sans-serif; font-weight:700; font-size:14px; letter-spacing:.02em}
 .tiny-row{display:flex; justify-content:center; gap:8px 20px; margin-top:8px; position:relative; z-index:2; flex-wrap:wrap}
 .tiny-row button{background:none; border:0; color:var(--muted); font-weight:800; font-size:14px; cursor:pointer; text-decoration:underline; text-underline-offset:4px; padding:10px 6px; min-height:44px}
 .durations{display:flex; gap:8px; justify-content:center; margin-top:14px; position:relative; z-index:2; flex-wrap:wrap}

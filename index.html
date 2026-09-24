@@ -8,7 +8,7 @@
 <title>Straw Hat Timer — a One Piece pomodoro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Nunito:wght@400;600;700;800;900&family=DotGothic16&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Nunito:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css" />
 <link rel="preload" as="image" href="assets/images/luffy.jpg" />
 <link rel="preload" as="image" href="assets/images/zoro.jpg" />
@@ -64,11 +64,10 @@
         <button role="tab" data-mode="long" aria-selected="false">Long rest</button>
       </div>
       <div class="dial-wrap">
-        <div class="straw-ring" aria-hidden="true"></div>
         <div class="dial" id="dial" role="group" aria-label="25:00, Focus">
           <svg class="progress" viewBox="0 0 200 200" aria-hidden="true">
-            <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(255,253,245,.15)" stroke-width="10"/>
-            <circle id="ring" cx="100" cy="100" r="88" fill="none" stroke="#E5383B" stroke-width="10" stroke-linecap="round" stroke-dasharray="553" stroke-dashoffset="0"/>
+            <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(255,253,245,.12)" stroke-width="6"/>
+            <circle id="ring" cx="100" cy="100" r="88" fill="none" stroke="#E5383B" stroke-width="6" stroke-linecap="round" stroke-dasharray="553" stroke-dashoffset="0"/>
           </svg>
           <div class="time-block">
             <div class="time" id="time" role="timer" aria-live="polite">25:00</div>
