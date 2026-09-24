@@ -11,7 +11,10 @@ Files: `index.html`, `style.css`, `script.js`, `assets/images/*.jpg`.
 ## State (localStorage)
 
 - Keys: `op-crew`, `op-tasks`, `op-completed` (lifetime total), `op-history`
-  (`{"YYYY-MM-DD": n}`, per-day focus counts, local day via `dayKey()`).
+  (`{"YYYY-MM-DD": n}`, per-day focus counts, local day via `dayKey()`),
+  `op-migrated-<uid>` (one-time cloud migration flag).
+- Logged out = localStorage only. Logged in = localStorage stays as cache,
+  Supabase (`profiles`, `history`, `tasks` tables) is source of truth.
 - `op-history` is append-only fresh-start data; never backfill or reset it.
 - Clear these keys when testing first-run/empty states.
 
@@ -22,6 +25,11 @@ Files: `index.html`, `style.css`, `script.js`, `assets/images/*.jpg`.
   `recordVoyage()`.
 - Heatmap is a rolling 26-week window ending today + trailing-364-day header
   count. No calendar years, no year switcher — by design.
+- The 30-day crew lock is enforced by a Postgres RLS policy, not JS.
+  `applyCrew()` only mirrors it (countdown via `lockDays()`); never
+  weaken the gate client-side.
+- Anon key is public by design (ships in `script.js`); `service_role`
+  must never enter the repo or chat.
 - Never commit `session-ses_*.md` (gitignored session log).
 
 ## Layout constraints
@@ -33,8 +41,9 @@ Files: `index.html`, `style.css`, `script.js`, `assets/images/*.jpg`.
 - Crew theming flows through `body[data-crew]` + `--crew`/`--crew-deep`;
   heat levels use `color-mix()` so crew switches recolor with no JS.
 - IDs shared between HTML/JS: `logGrid`, `logMonths`, `logCount`,
-  `footFocus`, `footShort`, `inFocus`, `inShort`, `inLong`, `sceneImg`.
-  Rename on both sides or neither.
+  `footFocus`, `footShort`, `inFocus`, `inShort`, `inLong`, `sceneImg`,
+  `accountBtn`, `authDialog`, `authEmail`, `authPass`, `authErr`,
+  `crewLock`. Rename on both sides or neither.
 - Fonts are Nunito (+300) and Pirata One only. DotGothic16 and the
   dashed straw-ring decor were deliberately removed — don't reintroduce.
 

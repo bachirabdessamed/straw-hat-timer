@@ -8,14 +8,16 @@ live in `AGENTS.md` — read that too. This file is the *what and why*.
 A One Piece-themed Pomodoro: sail focus voyages (default 25 min) with a
 chosen crewmate (Luffy, Zoro, Nami, Sanji), earn berries per completed
 voyage, rest on short/long breaks, post bounty tasks on a WANTED board,
-and track consistency on a voyage LOGBOOK heatmap. Single static page,
-all state in localStorage, no backend, no login.
+and track consistency on a voyage LOGBOOK heatmap. Single static page;
+guests live in localStorage, accounts sync via Supabase. No login
+required to sail.
 
 ## Tech Stack
 
 Vanilla HTML + CSS + JavaScript only — `index.html`, `style.css`,
-`script.js`. No frameworks, no bundler, no dependencies (Google Fonts
-via CDN is the sole external load). Keep it that way.
+`script.js`. No frameworks, no bundler (Google Fonts via CDN is the
+sole external load besides the approved Supabase JS SDK, which carries
+auth + sync). Keep it that way.
 
 ## Design System & Theme
 
@@ -36,6 +38,10 @@ via CDN is the sole external load). Keep it that way.
   per change.
 - **Floor:** responsive to 360px, visible focus, reduced-motion
   respected, touch-sized controls.
+- **Accounts:** parchment auth dialog ("Ship's log"), guest sailing
+  stays fully working, signup migrates local data once. First crew
+  pick locks for 30 days — the lock lives in the database (RLS),
+  the UI only shows the countdown.
 
 ## AI Coding Guidelines
 
