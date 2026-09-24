@@ -127,8 +127,11 @@ svg.progress{position:absolute; inset:0; width:100%; height:100%; transform:rota
 .durations label{display:flex; align-items:center; gap:8px; background:rgba(8,14,30,.4); border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:8px 10px; font-size:13px; font-weight:800; color:#CBD6EA; min-height:48px; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px)}
 .durations input{width:56px; background:var(--foam); border:0; border-radius:8px; padding:8px; font:inherit; font-size:16px; font-weight:900; color:var(--ink); text-align:center}
 
-/* wanted poster */
-.poster{
+/* right column: bounty board + voyage logbook */
+.board-col{display:flex; flex-direction:column; gap:26px; min-width:0}
+
+/* wanted poster + logbook share the parchment skin */
+.poster,.logbook{
   background:
     repeating-linear-gradient(0deg,rgba(74,58,26,.05) 0 2px,transparent 2px 26px),
     var(--paper);
@@ -136,10 +139,30 @@ svg.progress{position:absolute; inset:0; width:100%; height:100%; transform:rota
   outline:6px solid var(--paper); outline-offset:-2px;
   box-shadow:var(--shadow-ship); padding:22px 18px 16px; position:relative; min-width:0;
 }
-.poster::before,.poster::after{content:""; position:absolute; width:74px; height:22px; background:rgba(214,178,106,.92); top:-13px; border:1px solid rgba(0,0,0,.16)}
-.poster::before{left:26px; transform:rotate(-6deg)} .poster::after{right:26px; transform:rotate(6deg)}
-.poster h2{font-family:"Pirata One",serif; font-weight:400; font-size:42px; line-height:.9; margin:2px 0 0; text-align:center; letter-spacing:1px}
-.poster .sub{text-align:center; font-weight:800; font-size:13px; margin:6px 0 12px; color:#6B5630; max-width:40ch; margin-inline:auto}
+.poster::before,.poster::after,.logbook::before,.logbook::after{content:""; position:absolute; width:74px; height:22px; background:rgba(214,178,106,.92); top:-13px; border:1px solid rgba(0,0,0,.16)}
+.poster::before,.logbook::before{left:26px; transform:rotate(-6deg)} .poster::after,.logbook::after{right:26px; transform:rotate(6deg)}
+.poster h2,.logbook h2{font-family:"Pirata One",serif; font-weight:400; font-size:42px; line-height:.9; margin:2px 0 0; text-align:center; letter-spacing:1px}
+.poster .sub,.logbook .sub{text-align:center; font-weight:800; font-size:13px; margin:6px 0 12px; color:#6B5630; max-width:40ch; margin-inline:auto}
+.logbook h2{font-size:34px}
+
+/* voyage heatmap — crew-colored cells on paper */
+.log-scroll{overflow-x:auto; padding-bottom:4px}
+.log-body{display:flex; gap:8px}
+.log-gutter{display:grid; grid-template-rows:repeat(7,12px); gap:3px; font-size:10px; font-weight:800; color:#6B5630; margin-top:22px; flex:none}
+.log-gutter span{line-height:12px}
+.log-main{min-width:0}
+.log-months{display:flex; height:16px}
+.log-months span{flex:0 0 15px; font-size:10px; font-weight:800; color:#6B5630; white-space:nowrap; overflow:visible}
+.log-grid{display:flex; gap:3px; margin-top:6px}
+.log-week{display:flex; flex-direction:column; gap:3px}
+.day{width:12px; height:12px; border-radius:3px; border:1px solid rgba(74,58,26,.28); background:rgba(74,58,26,.12); padding:0; cursor:pointer}
+.day[data-l="1"]{background:color-mix(in srgb, var(--crew) 32%, #FFF9E3); border-color:transparent}
+.day[data-l="2"]{background:color-mix(in srgb, var(--crew) 55%, #FFF9E3); border-color:transparent}
+.day[data-l="3"]{background:color-mix(in srgb, var(--crew) 78%, #FFF9E3); border-color:transparent}
+.day[data-l="4"]{background:var(--crew-deep); border-color:transparent}
+.day.future{background:transparent; border-color:transparent; cursor:default}
+.log-legend{display:flex; align-items:center; justify-content:flex-end; gap:4px; margin-top:10px; font-size:11px; font-weight:800; color:#6B5630}
+.log-legend .day{cursor:default}
 .skulls{display:flex; justify-content:center; gap:10px; margin:0 0 14px; flex-wrap:wrap}
 .skull{width:38px; height:38px; border-radius:50%; display:grid; place-items:center; border:2px solid #4A3A1A; color:#4A3A1A}
 .skull.done{background:var(--crew-deep); border-color:var(--crew-deep); color:var(--crew)}
@@ -167,7 +190,9 @@ footer strong{color:var(--foam)}
 /* ---- tablets ---- */
 @media (max-width:920px){
   .stage{grid-template-columns:1fr; gap:22px}
+  .board-col{max-width:640px; margin:0 auto; width:100%; gap:22px}
   .poster{max-width:640px; margin:0 auto; width:100%}
+  .logbook{max-width:640px; margin:0 auto; width:100%}
   .pose-card{max-width:640px; margin:0 auto; width:100%}
 }
 /* ---- phones ---- */

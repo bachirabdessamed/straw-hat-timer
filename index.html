@@ -91,6 +91,7 @@
       </div>
     </section>
 
+    <div class="board-col">
     <section class="poster" aria-label="Bounties">
       <h2>WANTED</h2>
       <p class="sub" id="posterSub">Today's bounties · finish tasks to earn berries</p>
@@ -101,6 +102,22 @@
       </div>
       <ul class="bounties" id="list"></ul>
     </section>
+
+    <section class="logbook" aria-label="Voyage logbook">
+      <h2>LOGBOOK</h2>
+      <p class="sub" id="logCount">No voyages logged in the last year</p>
+      <div class="log-scroll">
+        <div class="log-body">
+          <div class="log-gutter" aria-hidden="true"><span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span></div>
+          <div class="log-main">
+            <div class="log-months" id="logMonths" aria-hidden="true"></div>
+            <div class="log-grid" id="logGrid"></div>
+          </div>
+        </div>
+      </div>
+      <div class="log-legend"><span>Less</span><span class="day" data-l="0"></span><span class="day" data-l="1"></span><span class="day" data-l="2"></span><span class="day" data-l="3"></span><span class="day" data-l="4"></span><span>More</span></div>
+    </section>
+    </div>
   </main>
   <footer>Built for long voyages. <strong>25 minutes sailing, 5 resting.</strong> Four sails earns a long rest on a sunny island.</footer>
 </div>

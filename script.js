@@ -99,17 +99,20 @@ function setMode(m,keepPaused=true){mode=m;remaining=durations[m];if(keepPaused)
 function tick(){remaining-=1;if(remaining<=0){remaining=0;paint();finishSession();return;}paint();}
 function start(){if(running)return;running=true;mainBtn.textContent='Drop anchor';paint();timerId=setInterval(tick,1000);}
 function pause(){running=false;clearInterval(timerId);mainBtn.textContent=remaining<durations[mode]&&remaining>0?'Keep sailing':'Set sail';paint();}
-function finishSession(){
+function finishSession(skipped=false){
   pause();beep();
-  if(mode==='focus'){completed++;try{localStorage.setItem('op-completed',String(completed));}catch(e){}cyclePos++;
+  if(mode==='focus'){
+    if(!skipped){completed++;try{localStorage.setItem('op-completed',String(completed));}catch(e){}recordVoyage();}
+    cyclePos++;
     if(cyclePos>=4){cyclePos=0;setMode('long',true);showToast('Four voyages done. Long rest — feast time.');}
+    else if(skipped){setMode('short',true);showToast('Skipped ahead — no berry earned. Take a short rest.');}
     else{setMode('short',true);showToast('Voyage complete. Berry earned. Take a short rest.');}
   }else if(mode==='short'){setMode('focus',true);showToast('Rest over. Back to the Grand Line.');}
   else{setMode('focus',true);showToast('Rested crew is strong crew. Next voyage.');}
-  mainBtn.textContent='Set sail';paint();
+  mainBtn.textContent='Set sail';paint();renderHeatmap();
 }
 mainBtn.addEventListener('click',()=>running?pause():start());
-$('#skipBtn').addEventListener('click',()=>finishSession());
+$('#skipBtn').addEventListener('click',()=>finishSession(true));
 $('#resetBtn').addEventListener('click',()=>{remaining=durations[mode];pause();mainBtn.textContent='Set sail';paint();});
 $('#soundBtn').addEventListener('click',e=>{soundOn=!soundOn;e.target.textContent=soundOn?'Sound on':'Sound off';});
 document.querySelectorAll('.modes button').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode,true)));
@@ -126,6 +129,11 @@ window.addEventListener('keydown',e=>{
 });
 let tasks=[];
 try{tasks=JSON.parse(localStorage.getItem('op-tasks')||'[]');completed=parseInt(localStorage.getItem('op-completed')||'0',10)||0;}catch(e){}
+let history={};
+try{history=JSON.parse(localStorage.getItem('op-history')||'{}')||{};}catch(e){history={};}
+function dayKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function saveHistory(){try{localStorage.setItem('op-history',JSON.stringify(history));}catch(e){}}
+function recordVoyage(){const k=dayKey(new Date());history[k]=(history[k]||0)+1;saveHistory();}
 function saveTasks(){try{localStorage.setItem('op-tasks',JSON.stringify(tasks));}catch(e){}}
 function renderTasks(){
   const list=$('#list');list.innerHTML='';
@@ -143,6 +151,49 @@ function renderTasks(){
   });
   const open=tasks.filter(t=>!t.done).length;
   $('#posterSub').textContent=open===0?'All bounties claimed · post new ones':`Today's bounties · ${open} still at large`;
+}
+const LOG_WEEKS=26;
+function levelFor(n){if(n<=0)return 0;if(n<=2)return 1;if(n<=4)return 2;if(n<=6)return 3;return 4;}
+function renderHeatmap(){
+  const grid=$('#logGrid'), months=$('#logMonths'), count=$('#logCount');
+  if(!grid||!months||!count)return;
+  grid.innerHTML='';months.innerHTML='';
+  const today=new Date();today.setHours(0,0,0,0);
+  const start=new Date(today);
+  start.setDate(start.getDate()-(LOG_WEEKS-1)*7-today.getDay());
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let prevMonth=-1;
+  for(let c=0;c<LOG_WEEKS;c++){
+    const week=document.createElement('div');week.className='log-week';
+    const sunMonth=new Date(start);sunMonth.setDate(sunMonth.getDate()+c*7);
+    const lab=document.createElement('span');
+    lab.textContent=sunMonth.getMonth()!==prevMonth?MONTHS[sunMonth.getMonth()]:'';
+    prevMonth=sunMonth.getMonth();
+    months.appendChild(lab);
+    for(let r=0;r<7;r++){
+      const d=new Date(start);d.setDate(d.getDate()+c*7+r);
+      if(d>today){
+        const f=document.createElement('span');f.className='day future';f.setAttribute('aria-hidden','true');
+        week.appendChild(f);continue;
+      }
+      const n=history[dayKey(d)]||0;
+      const b=document.createElement('button');
+      b.className='day';b.type='button';b.dataset.l=levelFor(n);
+      const stamp=d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+      const tip=n===0?`No voyages on ${stamp}`:`${n} ${n===1?'voyage':'voyages'} on ${stamp}`;
+      b.title=tip;b.setAttribute('aria-label',tip);
+      week.appendChild(b);
+    }
+    grid.appendChild(week);
+  }
+  let total=0;
+  const cutoff=new Date(today);cutoff.setDate(cutoff.getDate()-364);
+  for(const k in history){
+    const p=k.split('-');if(p.length!==3)continue;
+    const d=new Date(+p[0],+p[1]-1,+p[2]);
+    if(d>=cutoff&&d<=today)total+=history[k];
+  }
+  count.textContent=total===0?'No voyages logged in the last year':`${total} ${total===1?'voyage':'voyages'} in the last year`;
 }
 $('#addBtn').addEventListener('click',addTask);
 $('#taskInput').addEventListener('keydown',e=>{if(e.key==='Enter')addTask();});
@@ -167,4 +218,4 @@ function applyCrew(next,announce=true){
 }
 document.querySelectorAll('.crew-btn').forEach(b=>b.addEventListener('click',()=>applyCrew(b.dataset.crew,true)));
 ['luffy','zoro','nami','sanji'].forEach(k=>{ try{ const p=new Image(); p.src=CREWS[k].img; }catch(e){} });
-renderTasks();applyCrew(crew,false);
+renderTasks();applyCrew(crew,false);renderHeatmap();
