@@ -10,19 +10,19 @@ let completed=0, cyclePos=0, soundOn=true;
 let crew='luffy';
 try{crew=localStorage.getItem('op-crew')||'luffy';}catch(e){}
 const CREWS={
-  luffy:{label:'Luffy',color:'#E5383B',img:'assets/images/luffy.jpg',quotes:{
+  luffy:{label:'Luffy',color:'#E5383B',img:'luffy.jpg',quotes:{
     focus:['“Kaizoku-ou ni ore wa naru!” — set sail when ready.','Eyes on the Grand Line. One task at a time.','Gear up. Full focus, no running.'],
     short:['Sunny break. Meat and water, then back.','Shishishi! Rest quick, adventure waits.'],
     long:['Big feast like after Arlong Park. You earned it.','Rest hard, dream big, Pirate King.']}},
-  zoro:{label:'Zoro',color:'#2FBF71',img:'assets/images/zoro.jpg',quotes:{
+  zoro:{label:'Zoro',color:'#2FBF71',img:'zoro.jpg',quotes:{
     focus:['Three swords, one task. Cut the distractions.','Nothing… nothing at all. Keep working.','A scar is proof of focus. Keep going.'],
     short:['One bottle of rest. Then back to training.','Even swords need sheathing sometimes.'],
     long:['Long rest. Meditate like after Thriller Bark.','Sleep now. Get lost later.']}},
-  nami:{label:'Nami',color:'#FF9F1C',img:'assets/images/nami.jpg',quotes:{
+  nami:{label:'Nami',color:'#FF9F1C',img:'nami.jpg',quotes:{
     focus:['No focus, no treasure. Chart this task.','Map it out. One island at a time.','100 million berries starts with 25 minutes.'],
     short:['Log the course. Check the Log Pose.','Tangerine break. Count your berries.'],
     long:['Shopping rest on Cocoyasi. You earned it.','Long rest — weather is clear and sunny.']}},
-  sanji:{label:'Sanji',color:'#58A6FF',img:'assets/images/sanji.jpg',quotes:{
+  sanji:{label:'Sanji',color:'#58A6FF',img:'sanji.jpg',quotes:{
     focus:['Focus now, feast later. I will cook after.','Ladies first, distractions never.','Love is the garnish, focus is the dish.'],
     short:['Mellorine! Quick tea break, my dear.','Kick back. Service with a smile.'],
     long:['Full course rest à la Baratie. Enjoy.','Diable rest. Come back blazing.']}}
