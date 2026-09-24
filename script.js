@@ -121,9 +121,19 @@ document.querySelectorAll('.modes button').forEach(b=>b.addEventListener('click'
     let v=Math.max(lo,Math.min(hi,parseInt(e.target.value||'25',10)));
     e.target.value=v;durations[key]=v*60;
     if(mode===key&&!running)remaining=durations[key];
-    paint();
+    paint();syncFooter();
   });
 });
+function syncFooter(){
+  const f=$('#footFocus'), s=$('#footShort');
+  if(!f||!s)return;
+  const fv=$('#inFocus'), sv=$('#inShort');
+  const parse=(el,lo,hi,fb)=>{const v=parseInt((el&&el.value||'').trim(),10);return Number.isFinite(v)?Math.max(lo,Math.min(hi,v)):fb;};
+  f.textContent=parse(fv,1,90,Math.round(durations.focus/60));
+  s.textContent=parse(sv,1,30,Math.round(durations.short/60));
+}
+['#inFocus','#inShort'].forEach(sel=>$(sel).addEventListener('input',syncFooter));
+syncFooter();
 window.addEventListener('keydown',e=>{
   if(e.code==='Space'&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();running?pause():start();}
 });
