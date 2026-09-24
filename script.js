@@ -102,7 +102,7 @@ function pause(){running=false;clearInterval(timerId);mainBtn.textContent=remain
 function finishSession(skipped=false){
   pause();beep();
   if(mode==='focus'){
-    if(!skipped){completed++;try{localStorage.setItem('op-completed',String(completed));}catch(e){}recordVoyage();}
+    if(!skipped){completed++;try{localStorage.setItem('op-completed',String(completed));}catch(e){}recordVoyage();cloudSaveBerries();}
     cyclePos++;
     if(cyclePos>=4){cyclePos=0;setMode('long',true);showToast('Four voyages done. Long rest — feast time.');}
     else if(skipped){setMode('short',true);showToast('Skipped ahead — no berry earned. Take a short rest.');}
@@ -142,9 +142,9 @@ try{tasks=JSON.parse(localStorage.getItem('op-tasks')||'[]');completed=parseInt(
 let history={};
 try{history=JSON.parse(localStorage.getItem('op-history')||'{}')||{};}catch(e){history={};}
 function dayKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function saveHistory(){try{localStorage.setItem('op-history',JSON.stringify(history));}catch(e){}}
+function saveHistory(){try{localStorage.setItem('op-history',JSON.stringify(history));}catch(e){}cloudSaveHistory();}
 function recordVoyage(){const k=dayKey(new Date());history[k]=(history[k]||0)+1;saveHistory();}
-function saveTasks(){try{localStorage.setItem('op-tasks',JSON.stringify(tasks));}catch(e){}}
+function saveTasks(){try{localStorage.setItem('op-tasks',JSON.stringify(tasks));}catch(e){}cloudSaveTasks();}
 function renderTasks(){
   const list=$('#list');list.innerHTML='';
   if(!tasks.length){const d=document.createElement('div');d.className='empty';d.textContent='No bounties posted. Name your first target above and post it to the board.';list.appendChild(d);}
@@ -215,6 +215,11 @@ function addTask(){
 }
 function applyCrew(next,announce=true){
   if(!CREWS[next])return;
+  if(user&&profile&&profile.crew&&next!==crew&&lockDays()>0){
+    if(announce){const d=lockDays();showToast(`Locked with ${CREWS[crew].label} · switchable in ${d} ${d===1?'day':'days'}.`);}
+    paint();return;
+  }
+  const serverPick=!!(user&&profile&&profile.crew!==next&&!suppressPick);
   crew=next;
   try{localStorage.setItem('op-crew',crew);}catch(e){}
   document.body.dataset.crew=crew;
@@ -224,8 +229,144 @@ function applyCrew(next,announce=true){
   const q=CREWS[crew].quotes[mode];
   quoteEl.textContent=q[Math.floor(Math.random()*q.length)];
   if(announce)showToast(`Sailing with ${CREWS[crew].label}.`);
-  paint();renderTasks();
+  if(serverPick)persistCrew(next);
+  paint();renderTasks();renderLock();
 }
 document.querySelectorAll('.crew-btn').forEach(b=>b.addEventListener('click',()=>applyCrew(b.dataset.crew,true)));
 ['luffy','zoro','nami','sanji'].forEach(k=>{ try{ const p=new Image(); p.src=CREWS[k].img; }catch(e){} });
 renderTasks();applyCrew(crew,false);renderHeatmap();
+
+/* ---- Cloud sync (Supabase) ----
+   Guest mode = localStorage only (existing behavior above, untouched).
+   Logged in = localStorage stays as cache, Supabase is source of truth. */
+const SB_URL='https://gypeuocixgluetppiuxu.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cGV1b2NpeGdsdWV0cHBpdXh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyODQwMDYsImV4cCI6MjEwNTg2MDAwNn0.5QwdRzJqFEO3iXA9UBzGAOIRvQYCxKvwt2tHPagtRC4';
+let sb=null, user=null, profile=null, suppressPick=false;
+try{ sb=(window.supabase&&window.supabase.createClient(SB_URL,SB_KEY))||null; }catch(e){ sb=null; }
+async function sbq(p){ const r=await p; if(r.error) throw r.error; return r.data; }
+function cloudFail(){ showToast('Cloud unreachable — kept on this device.'); }
+
+function lockDays(){
+  if(!profile||!profile.crew_locked_until) return 0;
+  const ms=new Date(profile.crew_locked_until).getTime()-Date.now();
+  return ms>0?Math.ceil(ms/864e5):0;
+}
+function renderLock(){
+  const el=$('#crewLock'); if(!el) return;
+  const d=(user&&profile&&profile.crew)?lockDays():0;
+  el.textContent=d>0?` · switchable in ${d} ${d===1?'day':'days'}`:'';
+}
+async function persistCrew(next){
+  if(!sb||!user) return;
+  const until=new Date(Date.now()+30*864e5).toISOString();
+  try{
+    await sbq(sb.from('profiles').update({crew:next,crew_locked_until:until}).eq('id',user.id));
+    profile.crew=next; profile.crew_locked_until=until; renderLock();
+  }catch(e){ cloudFail(); }
+}
+async function cloudSaveBerries(){
+  if(!sb||!user) return;
+  try{ await sbq(sb.from('profiles').update({lifetime_berries:completed}).eq('id',user.id)); }
+  catch(e){ cloudFail(); }
+}
+async function cloudSaveHistory(){
+  if(!sb||!user) return;
+  try{
+    const k=dayKey(new Date());
+    await sbq(sb.from('history').upsert({user_id:user.id,day:k,count:history[k]||0},{onConflict:'user_id,day'}));
+  }catch(e){ cloudFail(); }
+}
+async function cloudSaveTasks(){
+  if(!sb||!user) return;
+  try{
+    await sbq(sb.from('tasks').delete().eq('user_id',user.id));
+    if(tasks.length) await sbq(sb.from('tasks').insert(tasks.map((t,i)=>({user_id:user.id,text:t.text,done:!!t.done,position:i}))));
+  }catch(e){ cloudFail(); }
+}
+async function migrateIfFresh(){
+  if(!profile) return;
+  const fresh=(Date.now()-new Date(profile.created_at).getTime())<10*60e3;
+  let done=false;
+  try{ done=!!localStorage.getItem('op-migrated-'+user.id); }catch(e){}
+  if(!fresh||done) return;
+  const rows=Object.entries(history).filter(([,n])=>n>0).map(([day,count])=>({user_id:user.id,day,count}));
+  if(rows.length) await sbq(sb.from('history').upsert(rows,{onConflict:'user_id,day'}));
+  if(tasks.length) await sbq(sb.from('tasks').insert(tasks.map((t,i)=>({user_id:user.id,text:t.text,done:!!t.done,position:i}))));
+  const berries=parseInt(localStorage.getItem('op-completed')||'0',10)||0;
+  if(berries>0) await sbq(sb.from('profiles').update({lifetime_berries:berries}).eq('id',user.id));
+  profile.lifetime_berries=berries;
+  try{ localStorage.setItem('op-migrated-'+user.id,'1'); }catch(e){}
+  if(rows.length||tasks.length||berries>0) showToast('Local voyages moved aboard your account.');
+}
+async function loadCloud(){
+  const prof=await sbq(sb.from('profiles').select('*').eq('id',user.id).maybeSingle());
+  profile=prof||await sbq(sb.from('profiles').insert({id:user.id}).select().single());
+  await migrateIfFresh();
+  const hist=await sbq(sb.from('history').select('day,count').eq('user_id',user.id));
+  history={}; (hist||[]).forEach(r=>{ history[r.day]=r.count; }); saveHistoryLocal();
+  completed=profile.lifetime_berries||0;
+  try{ localStorage.setItem('op-completed',String(completed)); }catch(e){}
+  const trows=await sbq(sb.from('tasks').select('text,done').eq('user_id',user.id).order('position').order('created_at'));
+  tasks=(trows||[]).map(r=>({text:r.text,done:!!r.done})); saveTasksLocal();
+  if(profile.crew&&CREWS[profile.crew]){
+    crew=profile.crew;
+    try{ localStorage.setItem('op-crew',crew); }catch(e){}
+  }
+  renderTasks(); suppressPick=true; applyCrew(crew,false); suppressPick=false; renderHeatmap(); paint(); setAccountUI();
+  if(!profile.crew) showToast('Pick your crewmate — once! Your choice locks for 30 days.');
+}
+function saveHistoryLocal(){ try{ localStorage.setItem('op-history',JSON.stringify(history)); }catch(e){} }
+function saveTasksLocal(){ try{ localStorage.setItem('op-tasks',JSON.stringify(tasks)); }catch(e){} }
+
+function setAccountUI(){
+  const btn=$('#accountBtn'); if(!btn) return;
+  const form=$('#authForm'), out=$('#authOut');
+  if(user){
+    btn.textContent=(user.email||'Account').split('@')[0];
+    if(form) form.hidden=true;
+    if(out){ out.hidden=false; const w=$('#authWho'); if(w) w.textContent='Signed in as '+(user.email||'sailor'); }
+  }else{
+    btn.textContent='Log in';
+    if(form) form.hidden=false;
+    if(out) out.hidden=true;
+  }
+}
+function openAuth(){ const d=$('#authDialog'); if(!d) return; const e=$('#authErr'); if(e) e.textContent=''; setAccountUI(); d.hidden=false; }
+function closeAuth(){ const d=$('#authDialog'); if(d) d.hidden=true; }
+async function authGo(mode){
+  const em=($('#authEmail')||{}).value||'', pw=($('#authPass')||{}).value||'';
+  const e=$('#authErr'); const fail=m=>{ if(e) e.textContent=m; };
+  if(!em.trim()||!pw){ fail('Enter email and password.'); return; }
+  if(!sb){ fail('Cloud library failed to load — check connection and reload.'); return; }
+  try{
+    const call=mode==='up'
+      ? sb.auth.signUp({email:em.trim(),password:pw})
+      : sb.auth.signInWithPassword({email:em.trim(),password:pw});
+    const {data,error}=await call;
+    if(error) throw error;
+    if(mode==='up'&&!data.session){ closeAuth(); showToast('Account created — confirm via email, then log in.'); return; }
+  }catch(err){ fail((err&&err.message)||'Login failed.'); }
+}
+if(sb){
+  const ab=$('#accountBtn'); if(ab) ab.addEventListener('click',openAuth);
+  const ac=$('#authClose'); if(ac) ac.addEventListener('click',closeAuth);
+  const al=$('#authLogin'); if(al) al.addEventListener('click',()=>authGo('in'));
+  const as=$('#authSignup'); if(as) as.addEventListener('click',()=>authGo('up'));
+  const ao=$('#authOutBtn');
+  if(ao) ao.addEventListener('click',async()=>{ try{ await sb.auth.signOut(); }catch(e){} });
+  const dlg=$('#authDialog');
+  if(dlg) dlg.addEventListener('click',ev=>{ if(ev.target===dlg) closeAuth(); });
+  setAccountUI();
+  sb.auth.onAuthStateChange(async(ev,session)=>{
+    const prev=user;
+    user=(session&&session.user)||null; profile=null;
+    if(user){
+      closeAuth(); setAccountUI();
+      try{ await loadCloud(); showToast('Welcome aboard, sailor.'); }
+      catch(err){ showToast('Cloud unreachable — sailing locally.'); }
+    }else{ setAccountUI(); renderLock(); paint(); if(prev) showToast('Signed out — local copy kept.'); }
+  });
+}else{
+  const ab=$('#accountBtn');
+  if(ab) ab.addEventListener('click',()=>showToast('Accounts need a connection — sailing as guest.'));
+}

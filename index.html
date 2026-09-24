@@ -36,10 +36,11 @@
       </div>
     </div>
     <div class="voyage" title="Completed focus sessions"><span class="dot"></span><span id="voyageCount">0 berries earned</span></div>
+    <button class="account-btn" id="accountBtn" title="Logbook account">Log in</button>
   </div>
 
   <section class="crew" aria-label="Choose your crewmate">
-    <p class="crew-label">Sailing with <strong id="crewName">Luffy</strong></p>
+    <p class="crew-label">Sailing with <strong id="crewName">Luffy</strong><span id="crewLock"></span></p>
     <div class="crew-pick" role="group" aria-label="Crew">
       <button class="crew-btn" data-crew="luffy" aria-pressed="true" title="Luffy — boundless energy">
         <span class="avatar" style="--a:#E5383B">L</span><span>Luffy</span>
@@ -121,6 +122,29 @@
   <footer>Built for long voyages. <strong><span id="footFocus">25</span> minutes sailing, <span id="footShort">5</span> resting.</strong> Four sails earns a long rest on a sunny island.</footer>
 </div>
 <div class="toast" id="toast" role="status"></div>
+<div class="auth-backdrop" id="authDialog" hidden>
+  <div class="auth-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <h2 id="authTitle">Ship's log</h2>
+    <p class="sub" id="authSub">Log in to sync voyages across devices — or keep sailing as guest.</p>
+    <div id="authForm">
+      <input id="authEmail" type="email" placeholder="you@example.com" autocomplete="email" aria-label="Email" />
+      <input id="authPass" type="password" placeholder="Password (min 6 characters)" autocomplete="current-password" aria-label="Password" />
+      <p class="auth-err" id="authErr" role="alert"></p>
+      <div class="auth-row">
+        <button id="authLogin">Log in</button>
+        <button id="authSignup" class="ghost">Sign up</button>
+      </div>
+    </div>
+    <div id="authOut" hidden>
+      <p class="sub" id="authWho"></p>
+      <div class="auth-row">
+        <button id="authOutBtn">Sign out</button>
+      </div>
+    </div>
+    <button class="auth-close" id="authClose">Close</button>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="script.js" defer></script>
 </body>
 </html>
