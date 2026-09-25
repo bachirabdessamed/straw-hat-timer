@@ -245,3 +245,13 @@ footer strong{color:var(--foam)}
 .auth-row button{flex:1; background:#2B2112; color:var(--paper); border:0; border-radius:10px; padding:0 16px; font-weight:900; font-size:16px; cursor:pointer; min-height:50px}
 .auth-row button.ghost{background:transparent; color:#2B2112; border:2px solid #4A3A1A}
 .auth-close{background:none; border:0; cursor:pointer; color:#8A764F; font-weight:800; font-size:14px; text-decoration:underline; text-underline-offset:4px; padding:12px 6px 4px; min-height:44px}
+.auth-tabs{display:flex; border-radius:999px; padding:4px; gap:4px; background:rgba(74,58,26,.12); border:1px solid rgba(74,58,26,.25); margin-bottom:12px}
+.auth-tabs button{flex:1; border:0; background:transparent; color:#6B5630; padding:10px 6px; border-radius:999px; font-weight:800; font-size:14px; cursor:pointer; min-height:44px}
+.auth-tabs button[aria-selected="true"]{background:#2B2112; color:var(--paper)}
+.auth-card input[hidden]{display:none}
+.auth-edit{background:none; border:0; cursor:pointer; color:#8A764F; font-size:16px; padding:4px 8px; min-width:44px; min-height:44px}
+.auth-editrow{display:flex; gap:8px; margin-bottom:10px}
+.auth-editrow[hidden]{display:none}
+.auth-editrow input{flex:1; min-width:0; margin-bottom:0}
+.auth-editrow button{background:#2B2112; color:var(--paper); border:0; border-radius:10px; padding:0 14px; font-weight:900; font-size:14px; cursor:pointer; min-height:50px; flex:none}
+.auth-editrow button.ghost{background:transparent; color:#2B2112; border:2px solid #4A3A1A}

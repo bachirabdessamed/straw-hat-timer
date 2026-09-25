@@ -127,16 +127,25 @@
     <h2 id="authTitle">Ship's log</h2>
     <p class="sub" id="authSub">Log in to sync voyages across devices — or keep sailing as guest.</p>
     <div id="authForm">
+      <div class="auth-tabs" role="tablist" aria-label="Account mode">
+        <button id="authTabIn" role="tab" aria-selected="true">Log in</button>
+        <button id="authTabUp" role="tab" aria-selected="false">Sign up</button>
+      </div>
       <input id="authEmail" type="email" placeholder="you@example.com" autocomplete="email" aria-label="Email" />
       <input id="authPass" type="password" placeholder="Password (min 6 characters)" autocomplete="current-password" aria-label="Password" />
+      <input id="authUser" type="text" maxlength="20" placeholder="Username (optional, e.g. strawhat_joe)" autocomplete="username" aria-label="Username" hidden />
       <p class="auth-err" id="authErr" role="alert"></p>
       <div class="auth-row">
-        <button id="authLogin">Log in</button>
-        <button id="authSignup" class="ghost">Sign up</button>
+        <button id="authGo">Log in</button>
       </div>
     </div>
     <div id="authOut" hidden>
-      <p class="sub" id="authWho"></p>
+      <p class="sub">Signed in as <strong id="authName"></strong> <button class="auth-edit" id="authEdit" title="Change username" aria-label="Change username">✎</button></p>
+      <div class="auth-editrow" id="authEditRow" hidden>
+        <input id="authEditInput" type="text" maxlength="20" aria-label="New username" />
+        <button id="authEditSave">Save</button>
+        <button id="authEditCancel" class="ghost">Cancel</button>
+      </div>
       <div class="auth-row">
         <button id="authOutBtn">Sign out</button>
       </div>

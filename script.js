@@ -264,8 +264,8 @@ function from(table){
       status=r.status;
       const text=await r.text();
       try{ data=text?JSON.parse(text):null; }catch(e){ data=null; }
-      if(!r.ok) return {data:null,error:{message:(data&&(data.message||data.msg))||('Request failed '+status)}};
-    }catch(e){ return {data:null,error:{message:(e&&e.message)||'Network failed'}}; }
+      if(!r.ok) return {data:null,error:{message:(data&&(data.message||data.msg))||('Request failed '+status),status,code:data&&data.code}};
+    }catch(e){ return {data:null,error:{message:(e&&e.message)||'Network failed',status:0}}; }
     if(st.single) return (Array.isArray(data)&&data.length===1)
       ? {data:data[0],error:null} : {data:null,error:{message:'No row'}};
     if(st.maybe) return (!Array.isArray(data)||data.length<=1)
@@ -411,7 +411,19 @@ async function migrateIfFresh(){
 }
 async function loadCloud(){
   const prof=await sbq(sb.from('profiles').select('*').eq('id',user.id).maybeSingle());
-  profile=prof||await sbq(sb.from('profiles').insert({id:user.id}).select().single());
+  if(!prof){
+    const fb=(user.email||'').split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,20);
+    const uname=(pendingUsername&&USER_RE.test(pendingUsername))?pendingUsername:(USER_RE.test(fb)?fb:'sailor');
+    try{
+      profile=await sbq(sb.from('profiles').insert({id:user.id,username:uname}).select().single());
+    }catch(err){
+      if(err&&(err.code==='23505'||err.status===409)){
+        profile=await sbq(sb.from('profiles').insert({id:user.id,username:null}).select().single());
+        showToast('That name was taken — pick yours with the ✎ button.');
+      }else throw err;
+    }
+  }else profile=prof;
+  pendingUsername='';
   await migrateIfFresh();
   const hist=await sbq(sb.from('history').select('day,count').eq('user_id',user.id));
   history={}; (hist||[]).forEach(r=>{ history[r.day]=r.count; }); saveHistoryLocal();
@@ -433,24 +445,48 @@ function setAccountUI(){
   const btn=$('#accountBtn'); if(!btn) return;
   const form=$('#authForm'), out=$('#authOut');
   if(user){
-    btn.textContent=(user.email||'Account').split('@')[0];
+    btn.textContent=accountName();
     if(form) form.hidden=true;
-    if(out){ out.hidden=false; const w=$('#authWho'); if(w) w.textContent='Signed in as '+(user.email||'sailor'); }
+    if(out){
+      out.hidden=false;
+      const w=$('#authName'); if(w) w.textContent=accountName();
+      const er=$('#authEditRow'); if(er) er.hidden=true;
+    }
   }else{
     btn.textContent='Log in';
-    if(form) form.hidden=false;
+    if(form){ form.hidden=false; setAuthMode(authMode); }
     if(out) out.hidden=true;
   }
 }
+const USER_RE=/^[A-Za-z0-9_]{3,20}$/;
+let authMode='in', pendingUsername='';
+function accountName(){
+  if(profile&&profile.username) return profile.username;
+  if(user&&user.email) return user.email.split('@')[0];
+  return 'sailor';
+}
+function setAuthMode(m){
+  authMode=(m==='up')?'up':'in';
+  const ti=$('#authTabIn'), tu=$('#authTabUp'), uf=$('#authUser'), go=$('#authGo');
+  if(ti) ti.setAttribute('aria-selected',authMode==='in'?'true':'false');
+  if(tu) tu.setAttribute('aria-selected',authMode==='up'?'true':'false');
+  if(uf) uf.hidden=authMode!=='up';
+  if(go) go.textContent=authMode==='up'?'Sign up':'Log in';
+}
 function openAuth(){ const d=$('#authDialog'); if(!d) return; const e=$('#authErr'); if(e) e.textContent=''; setAccountUI(); d.hidden=false; }
 function closeAuth(){ const d=$('#authDialog'); if(d) d.hidden=true; }
-async function authGo(mode){
+async function authGo(){
+  const mode=authMode;
   const em=($('#authEmail')||{}).value||'', pw=($('#authPass')||{}).value||'';
   const e=$('#authErr'); const fail=m=>{ if(e) e.textContent=m; };
   if(!em.trim()||!pw){ fail('Enter email and password.'); return; }
+  if(mode==='up'){
+    const uname=(($('#authUser')||{}).value||'').trim().toLowerCase();
+    if(uname&&!USER_RE.test(uname)){ fail('Username: 3-20 letters, numbers, underscores.'); return; }
+    pendingUsername=uname;
+  }
   if(!sb){ fail('Cloud library failed to load — check connection and reload.'); return; }
-  const li=$('#authLogin'), su=$('#authSignup');
-  if(li) li.disabled=true; if(su) su.disabled=true;
+  const go=$('#authGo'); if(go){ go.disabled=true; go.textContent='Setting sail…'; }
   try{
     const call=mode==='up'
       ? sb.auth.signUp({email:em.trim(),password:pw})
@@ -459,13 +495,43 @@ async function authGo(mode){
     if(error) throw error;
     if(mode==='up'&&!data.session){ closeAuth(); showToast('Account created — confirm via email, then log in.'); return; }
   }catch(err){ fail((err&&err.message)||'Login failed.'); }
-  finally{ if(li) li.disabled=false; if(su) su.disabled=false; }
+  finally{ setAuthMode(authMode); }
+}
+function openNameEdit(){
+  const r=$('#authEditRow'), i=$('#authEditInput');
+  if(!r||!i) return;
+  i.value=(profile&&profile.username)||'';
+  r.hidden=false; i.focus();
+}
+function closeNameEdit(){ const r=$('#authEditRow'); if(r) r.hidden=true; }
+async function saveNameEdit(){
+  const i=$('#authEditInput');
+  const v=((i&&i.value)||'').trim().toLowerCase();
+  const e=$('#authErr'); const fail=m=>{ if(e) e.textContent=m; };
+  if(!USER_RE.test(v)){ fail('Username: 3-20 letters, numbers, underscores.'); return; }
+  if(!sb||!user){ fail('Log in first.'); return; }
+  try{
+    await sbq(sb.from('profiles').update({username:v}).eq('id',user.id));
+    profile.username=v; setAccountUI(); closeNameEdit();
+    showToast(`Sailing as ${v}.`);
+  }catch(err){
+    if(err&&(err.code==='23505'||err.status===409)) fail('Username already taken — try another.');
+    else fail((err&&err.message)||'Could not save username.');
+  }
+}
+function clearAuthFields(){
+  const em=$('#authEmail'), pw=$('#authPass'), un=$('#authUser');
+  if(em) em.value=''; if(pw) pw.value=''; if(un) un.value='';
 }
 if(sb){
   const ab=$('#accountBtn'); if(ab) ab.addEventListener('click',openAuth);
   const ac=$('#authClose'); if(ac) ac.addEventListener('click',closeAuth);
-  const al=$('#authLogin'); if(al) al.addEventListener('click',()=>authGo('in'));
-  const as=$('#authSignup'); if(as) as.addEventListener('click',()=>authGo('up'));
+  const ti=$('#authTabIn'); if(ti) ti.addEventListener('click',()=>setAuthMode('in'));
+  const tu=$('#authTabUp'); if(tu) tu.addEventListener('click',()=>setAuthMode('up'));
+  const go=$('#authGo'); if(go) go.addEventListener('click',()=>authGo());
+  const ae=$('#authEdit'); if(ae) ae.addEventListener('click',openNameEdit);
+  const asv=$('#authEditSave'); if(asv) asv.addEventListener('click',saveNameEdit);
+  const acn=$('#authEditCancel'); if(acn) acn.addEventListener('click',closeNameEdit);
   const ao=$('#authOutBtn');
   if(ao) ao.addEventListener('click',async()=>{ try{ await sb.auth.signOut(); }catch(e){} });
   const dlg=$('#authDialog');
@@ -475,7 +541,7 @@ if(sb){
     const prev=user;
     user=(session&&session.user)||null; profile=null;
     if(user){
-      closeAuth(); setAccountUI();
+      closeAuth(); clearAuthFields(); setAccountUI();
       try{ await loadCloud(); showToast('Welcome aboard, sailor.'); }
       catch(err){ showToast('Cloud unreachable — sailing locally.'); }
     }else{ setAccountUI(); renderLock(); paint(); if(prev) showToast('Signed out — local copy kept.'); }
