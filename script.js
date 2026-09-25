@@ -347,15 +347,14 @@ const auth={
   },
   onAuthStateChange(cb){
     const sub={unsubscribe(){ authSubs=authSubs.filter(f=>f!==cb); }};
-    if(authRestored) setTimeout(()=>{ try{ cb('INITIAL_SESSION',sbSession?{user:sbSession.user}:null); }catch(e){} },0);
-    else authSubs.push(cb);
+    authSubs.push(cb);
+    if(authRestored) setTimeout(()=>{ if(authSubs.includes(cb)){ try{ cb('INITIAL_SESSION',sbSession?{user:sbSession.user}:null); }catch(e){} } },0);
     return {data:{subscription:sub}};
   }
 };
 const sb={from,auth};
 restoreSession().then(()=>{
-  const pend=authSubs.slice(); authSubs=[];
-  pend.forEach(cb=>{ try{ cb('INITIAL_SESSION',sbSession?{user:sbSession.user}:null); }catch(e){} });
+  fireAuth('INITIAL_SESSION',sbSession?{user:sbSession.user}:null);
 });
 
 function lockDays(){
@@ -450,6 +449,8 @@ async function authGo(mode){
   const e=$('#authErr'); const fail=m=>{ if(e) e.textContent=m; };
   if(!em.trim()||!pw){ fail('Enter email and password.'); return; }
   if(!sb){ fail('Cloud library failed to load — check connection and reload.'); return; }
+  const li=$('#authLogin'), su=$('#authSignup');
+  if(li) li.disabled=true; if(su) su.disabled=true;
   try{
     const call=mode==='up'
       ? sb.auth.signUp({email:em.trim(),password:pw})
@@ -458,6 +459,7 @@ async function authGo(mode){
     if(error) throw error;
     if(mode==='up'&&!data.session){ closeAuth(); showToast('Account created — confirm via email, then log in.'); return; }
   }catch(err){ fail((err&&err.message)||'Login failed.'); }
+  finally{ if(li) li.disabled=false; if(su) su.disabled=false; }
 }
 if(sb){
   const ab=$('#accountBtn'); if(ab) ab.addEventListener('click',openAuth);
