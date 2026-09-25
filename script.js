@@ -242,7 +242,7 @@ renderTasks();applyCrew(crew,false);renderHeatmap();
    Logged in = localStorage stays as cache, Supabase is source of truth. */
 const SB_URL='https://gypeuocixgluetppiuxu.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cGV1b2NpeGdsdWV0cHBpdXh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyODQwMDYsImV4cCI6MjEwNTg2MDAwNn0.5QwdRzJqFEO3iXA9UBzGAOIRvQYCxKvwt2tHPagtRC4';
-let sbSession=null, authSubs=[], authRestored=false;
+let sbSession=null, authSubs=[], authRestored=false, recoveryActive=false, initialFlushed=false;
 function sbToken(){ return (sbSession&&sbSession.access_token)||SB_KEY; }
 async function sbq(p){ const r=await p; if(r.error) throw r.error; return r.data; }
 function cloudFail(){ showToast('Cloud unreachable — kept on this device.'); }
@@ -348,12 +348,13 @@ const auth={
   onAuthStateChange(cb){
     const sub={unsubscribe(){ authSubs=authSubs.filter(f=>f!==cb); }};
     authSubs.push(cb);
-    if(authRestored) setTimeout(()=>{ if(authSubs.includes(cb)){ try{ cb('INITIAL_SESSION',sbSession?{user:sbSession.user}:null); }catch(e){} } },0);
+    if(authRestored&&initialFlushed) setTimeout(()=>{ if(authSubs.includes(cb)){ try{ cb('INITIAL_SESSION',sbSession?{user:sbSession.user}:null); }catch(e){} } },0);
     return {data:{subscription:sub}};
   }
 };
 const sb={from,auth};
 restoreSession().then(()=>{
+  initialFlushed=true;
   fireAuth('INITIAL_SESSION',sbSession?{user:sbSession.user}:null);
 });
 
@@ -563,6 +564,7 @@ function cleanRecoveryUrl(){
   try{ if(location.hash) history.replaceState(null,'',location.pathname+location.search); }catch(e){}
 }
 async function enterRecoverySession(found){
+  recoveryActive=true;
   try{
     let session=found.session||null;
     if(!session&&found.tokenHash){
@@ -572,10 +574,17 @@ async function enterRecoverySession(found){
       session=data;
     }
     if(!session||!session.access_token) throw new Error('expired');
+    if(!session.user){
+      const r=await fetch(SB_AUTH+'/user',{headers:{apikey:SB_KEY,Authorization:'Bearer '+session.access_token}});
+      const data=await r.json().catch(()=>null);
+      if(!r.ok||!data||!data.id) throw new Error('expired');
+      session={access_token:session.access_token,refresh_token:session.refresh_token,user:data};
+    }
     setSession(session);
     cleanRecoveryUrl();
     openAuthReset();
   }catch(e){
+    recoveryActive=false;
     cleanRecoveryUrl();
     openAuth(); showAuthView('form');
     const er=$('#authErr'); if(er) er.textContent='Reset link expired — request a fresh one.';
@@ -598,6 +607,7 @@ async function saveNewPassword(){
     const data=await r.json().catch(()=>null);
     if(!r.ok) throw new Error((data&&(data.msg||data.message))||('Save failed '+r.status));
     if(np) np.value='';
+    recoveryActive=false;
     closeAuth(); showToast('Password updated — you are logged in.');
   }catch(err){ fail((err&&err.message)||'Could not save password.'); }
   finally{ if(go){ go.disabled=false; go.textContent='Save New Password'; } }
@@ -639,7 +649,7 @@ if(sb){
       closeAuth(); clearAuthFields(); setAccountUI();
       try{ await loadCloud(); showToast('Welcome aboard, sailor.'); }
       catch(err){ showToast('Cloud unreachable — sailing locally.'); }
-    }else{ setAccountUI(); showAuthView('form'); renderLock(); paint(); if(prev) showToast('Signed out — local copy kept.'); }
+    }else{ setAccountUI(); if(!recoveryActive) showAuthView('form'); renderLock(); paint(); if(prev) showToast('Signed out — local copy kept.'); }
   });
 }else{
   const ab=$('#accountBtn');
