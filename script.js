@@ -236,15 +236,127 @@ document.querySelectorAll('.crew-btn').forEach(b=>b.addEventListener('click',()=
 ['luffy','zoro','nami','sanji'].forEach(k=>{ try{ const p=new Image(); p.src=CREWS[k].img; }catch(e){} });
 renderTasks();applyCrew(crew,false);renderHeatmap();
 
-/* ---- Cloud sync (Supabase) ----
+/* ---- Cloud sync: direct Supabase REST over fetch (no SDK, no eval) ----
    Guest mode = localStorage only (existing behavior above, untouched).
    Logged in = localStorage stays as cache, Supabase is source of truth. */
 const SB_URL='https://gypeuocixgluetppiuxu.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cGV1b2NpeGdsdWV0cHBpdXh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyODQwMDYsImV4cCI6MjEwNTg2MDAwNn0.5QwdRzJqFEO3iXA9UBzGAOIRvQYCxKvwt2tHPagtRC4';
-let sb=null, user=null, profile=null, suppressPick=false;
-try{ sb=(window.supabase&&window.supabase.createClient(SB_URL,SB_KEY))||null; }catch(e){ sb=null; }
+let user=null, profile=null, suppressPick=false;
+let sbSession=null, authSubs=[], authRestored=false;
+function sbToken(){ return (sbSession&&sbSession.access_token)||SB_KEY; }
 async function sbq(p){ const r=await p; if(r.error) throw r.error; return r.data; }
 function cloudFail(){ showToast('Cloud unreachable — kept on this device.'); }
+
+/* Minimal PostgREST builder matching the calls used below. */
+function from(table){
+  const st={cols:'*',params:[],orders:[],method:'GET',body:null,prefer:null,onConflict:null,single:false,maybe:false};
+  async function run(){
+    let url=SB_REST+'/'+table+'?select='+encodeURIComponent(st.cols);
+    for(const [k,v] of st.params) url+='&'+encodeURIComponent(k)+'='+encodeURIComponent(v);
+    if(st.orders.length) url+='&order='+st.orders.map(encodeURIComponent).join(',');
+    if(st.onConflict) url+='&on_conflict='+encodeURIComponent(st.onConflict);
+    const headers={apikey:SB_KEY,Accept:'application/json',Authorization:'Bearer '+sbToken()};
+    if(st.body!=null) headers['Content-Type']='application/json';
+    if(st.prefer) headers.Prefer=st.prefer;
+    let data=null, status=0;
+    try{
+      const r=await fetch(url,{method:st.method,headers,body:st.body!=null?JSON.stringify(st.body):undefined});
+      status=r.status;
+      const text=await r.text();
+      try{ data=text?JSON.parse(text):null; }catch(e){ data=null; }
+      if(!r.ok) return {data:null,error:{message:(data&&(data.message||data.msg))||('Request failed '+status)}};
+    }catch(e){ return {data:null,error:{message:(e&&e.message)||'Network failed'}}; }
+    if(st.single) return (Array.isArray(data)&&data.length===1)
+      ? {data:data[0],error:null} : {data:null,error:{message:'No row'}};
+    if(st.maybe) return (!Array.isArray(data)||data.length<=1)
+      ? {data:(Array.isArray(data)?data[0]:data)||null,error:null} : {data:null,error:{message:'Many rows'}};
+    return {data,error:null};
+  }
+  const b={
+    select(c){ if(c) st.cols=c; return b; },
+    eq(k,v){ st.params.push([k,'eq.'+v]); return b; },
+    order(k){ st.orders.push(k); return b; },
+    insert(rows){ st.method='POST'; st.body=rows; st.prefer='return=representation'; return b; },
+    update(obj){ st.method='PATCH'; st.body=obj; st.prefer='return=representation'; return b; },
+    delete(){ st.method='DELETE'; return b; },
+    upsert(rows,o){ st.method='POST'; st.body=rows; st.prefer='resolution=merge-duplicates,return=representation'; if(o&&o.onConflict) st.onConflict=o.onConflict; return b; },
+    single(){ st.single=true; return run(); },
+    maybeSingle(){ st.maybe=true; return run(); },
+    then(res,rej){ return run().then(res,rej); }
+  };
+  return b;
+}
+const SB_REST=SB_URL+'/rest/v1';
+const SB_AUTH=SB_URL+'/auth/v1';
+
+function persistSession(s){
+  sbSession={access_token:s.access_token,refresh_token:s.refresh_token,user:s.user};
+  try{ localStorage.setItem('op-session',JSON.stringify(sbSession)); }catch(e){}
+}
+function fireAuth(ev,session){ authSubs.forEach(cb=>{ try{ cb(ev,session); }catch(e){} }); }
+function setSession(s){
+  persistSession(s);
+  fireAuth('SIGNED_IN',{user:s.user});
+}
+function clearSession(){
+  sbSession=null;
+  try{ localStorage.removeItem('op-session'); }catch(e){}
+  fireAuth('SIGNED_OUT',null);
+}
+async function restoreSession(){
+  let stored=null;
+  try{ stored=JSON.parse(localStorage.getItem('op-session')||'null'); }catch(e){}
+  if(stored&&stored.access_token){
+    sbSession=stored;
+    try{
+      const r=await fetch(SB_AUTH+'/user',{headers:{apikey:SB_KEY,Authorization:'Bearer '+stored.access_token}});
+      if(r.ok){ authRestored=true; return; }
+      if(r.status===401&&stored.refresh_token){
+        const rr=await fetch(SB_AUTH+'/token?grant_type=refresh_token',{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:stored.refresh_token})});
+        const data=await rr.json().catch(()=>null);
+        if(rr.ok&&data&&data.access_token){ persistSession(data); authRestored=true; return; }
+      }
+    }catch(e){}
+    sbSession=null;
+    try{ localStorage.removeItem('op-session'); }catch(e){}
+  }
+  authRestored=true;
+}
+const auth={
+  async signUp({email,password}){
+    const r=await fetch(SB_AUTH+'/signup',{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+    const data=await r.json().catch(()=>null);
+    if(!r.ok) throw new Error((data&&(data.msg||data.message||data.error_description))||('Signup failed '+r.status));
+    const session=(data&&(data.session||(data.access_token?data:null)))||null;
+    if(session) setSession(session);
+    return {data:{user:(session&&session.user)||(data&&data.user)||null,session},error:null};
+  },
+  async signInWithPassword({email,password}){
+    const r=await fetch(SB_AUTH+'/token?grant_type=password',{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+    const data=await r.json().catch(()=>null);
+    if(!r.ok) throw new Error((data&&(data.msg||data.message||data.error_description))||('Login failed '+r.status));
+    setSession(data);
+    return {data:{user:data.user,session:data},error:null};
+  },
+  async signOut(){
+    if(sbSession){
+      try{ await fetch(SB_AUTH+'/logout',{method:'POST',headers:{apikey:SB_KEY,Authorization:'Bearer '+sbSession.access_token}}); }catch(e){}
+    }
+    clearSession();
+    return {error:null};
+  },
+  onAuthStateChange(cb){
+    const sub={unsubscribe(){ authSubs=authSubs.filter(f=>f!==cb); }};
+    if(authRestored) setTimeout(()=>{ try{ cb('INITIAL_SESSION',sbSession?{user:sbSession.user}:null); }catch(e){} },0);
+    else authSubs.push(cb);
+    return {data:{subscription:sub}};
+  }
+};
+const sb={from,auth};
+restoreSession().then(()=>{
+  const pend=authSubs.slice(); authSubs=[];
+  pend.forEach(cb=>{ try{ cb('INITIAL_SESSION',sbSession?{user:sbSession.user}:null); }catch(e){} });
+});
 
 function lockDays(){
   if(!profile||!profile.crew_locked_until) return 0;
