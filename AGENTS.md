@@ -12,7 +12,9 @@ Files: `index.html`, `style.css`, `script.js`, `assets/images/*.jpg`.
 
 - Keys: `op-crew`, `op-tasks`, `op-completed` (lifetime total), `op-history`
   (`{"YYYY-MM-DD": n}`, per-day focus counts, local day via `dayKey()`),
-  `op-migrated-<uid>` (one-time cloud migration flag).
+  `op-migrated-<uid>` (one-time cloud migration flag),
+  `op-promo-day` (`YYYY-MM-DD` of last promo dismiss/signup; promo
+  shows once per day to guests only).
 - Logged out = localStorage only. Logged in = localStorage stays as cache,
   Supabase (`profiles`, `history`, `tasks` tables) is source of truth.
 - `op-history` is append-only fresh-start data; never backfill or reset it.
@@ -47,8 +49,8 @@ Files: `index.html`, `style.css`, `script.js`, `assets/images/*.jpg`.
   `authEditRow`, `authEditInput`, `authEditSave`, `authEditCancel`,
   `authEye`, `authForgot`, `authRecover`, `authRecEmail`, `authRecErr`,
   `authRecGo`, `authBackLogin`, `authResetView`, `authNewPass`,
-  `authResetErr`, `authSavePass`, `crewLock`. Rename on both sides or
-  neither.
+  `authResetErr`, `authSavePass`, `promoModal`, `promoSignup`,
+  `promoLater`, `crewLock`. Rename on both sides or neither.
 - Fonts are Nunito (+300) and Pirata One only. DotGothic16 and the
   dashed straw-ring decor were deliberately removed — don't reintroduce.
 

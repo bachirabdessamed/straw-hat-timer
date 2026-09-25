@@ -476,6 +476,22 @@ function resetAuthEye(){
 }
 function openAuth(){ const d=$('#authDialog'); if(!d) return; const e=$('#authErr'); if(e) e.textContent=''; resetAuthEye(); setAccountUI(); showAuthView(user?'out':'form'); d.hidden=false; }
 function closeAuth(){ const d=$('#authDialog'); if(d) d.hidden=true; }
+function stampPromo(){ try{ localStorage.setItem('op-promo-day',dayKey(new Date())); }catch(e){} }
+function promoDue(){
+  if(user||parseRecoveryLink()) return false;
+  let last='';
+  try{ last=localStorage.getItem('op-promo-day')||''; }catch(e){}
+  return last!==dayKey(new Date());
+}
+function showPromo(){
+  if(!promoDue()) return;
+  const m=$('#promoModal'); if(m) m.hidden=false;
+}
+function hidePromo(){ const m=$('#promoModal'); if(m) m.hidden=true; }
+function maybePromo(){
+  if(!promoDue()) return;
+  setTimeout(()=>{ showPromo(); },2000);
+}
 function showAuthView(which){
   const form=$('#authForm'), rec=$('#authRecover'), rst=$('#authResetView'), out=$('#authOut');
   if(form) form.hidden=which!=='form';
@@ -637,16 +653,21 @@ if(sb){
   const abl=$('#authBackLogin'); if(abl) abl.addEventListener('click',()=>showAuthView('form'));
   const arg=$('#authRecGo'); if(arg) arg.addEventListener('click',requestRecovery);
   const asp=$('#authSavePass'); if(asp) asp.addEventListener('click',saveNewPassword);
+  const ps=$('#promoSignup');
+  if(ps) ps.addEventListener('click',()=>{ stampPromo(); hidePromo(); openAuth(); setAuthMode('up'); });
+  const pl=$('#promoLater');
+  if(pl) pl.addEventListener('click',()=>{ stampPromo(); hidePromo(); });
   const dlg=$('#authDialog');
   if(dlg) dlg.addEventListener('click',ev=>{ if(ev.target===dlg) closeAuth(); });
   setAccountUI();
   const rec=parseRecoveryLink();
   if(rec) enterRecoverySession(rec);
+  maybePromo();
   sb.auth.onAuthStateChange(async(ev,session)=>{
     const prev=user;
     user=(session&&session.user)||null; profile=null;
     if(user){
-      closeAuth(); clearAuthFields(); setAccountUI();
+      closeAuth(); hidePromo(); clearAuthFields(); setAccountUI();
       try{ await loadCloud(); showToast('Welcome aboard, sailor.'); }
       catch(err){ showToast('Cloud unreachable — sailing locally.'); }
     }else{ setAccountUI(); if(!recoveryActive) showAuthView('form'); renderLock(); paint(); if(prev) showToast('Signed out — local copy kept.'); }

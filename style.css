@@ -233,6 +233,18 @@ footer strong{color:var(--foam)}
 .account-btn:hover{background:rgba(255,253,245,.16)}
 #crewLock{color:var(--muted); font-weight:700}
 
+/* signup promo modal */
+.promo-backdrop{position:fixed; inset:0; z-index:55; display:grid; place-items:center; padding:18px; background:rgba(10,16,30,.62)}
+.promo-backdrop[hidden]{display:none}
+.promo-card{background:var(--paper); color:#2B2112; border-radius:6px; border:3px double #4A3A1A; outline:6px solid var(--paper); outline-offset:-2px; box-shadow:var(--shadow-ship); padding:26px 22px 20px; width:min(400px,100%); text-align:center; position:relative}
+.promo-card h2{font-family:"Pirata One",serif; font-weight:400; font-size:34px; line-height:1; margin:0}
+.promo-card .sub{font-weight:700; font-size:14px; margin:10px 0 18px; color:#6B5630; line-height:1.6}
+.promo-row{display:flex; gap:10px; align-items:center; justify-content:center}
+.promo-row button{border:0; border-radius:999px; padding:14px 28px; font-weight:900; font-size:16px; cursor:pointer; min-height:52px}
+#promoSignup{background:linear-gradient(180deg,#FFE89A,var(--gold)); color:#3A2A00; box-shadow:0 4px 0 rgba(154,107,10,.85),0 12px 24px rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.35); flex:1.4}
+#promoSignup:hover{background:linear-gradient(180deg,#FFE89A,#FFD166)}
+#promoLater{background:transparent; color:#8A764F; text-decoration:underline; text-underline-offset:4px; flex:1}
+
 /* auth dialog */
 .auth-backdrop{position:fixed; inset:0; z-index:60; display:grid; place-items:center; padding:18px; background:rgba(10,16,30,.62)}
 .auth-backdrop[hidden]{display:none}
