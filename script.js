@@ -443,19 +443,12 @@ function saveTasksLocal(){ try{ localStorage.setItem('op-tasks',JSON.stringify(t
 
 function setAccountUI(){
   const btn=$('#accountBtn'); if(!btn) return;
-  const form=$('#authForm'), out=$('#authOut');
   if(user){
     btn.textContent=accountName();
-    if(form) form.hidden=true;
-    if(out){
-      out.hidden=false;
-      const w=$('#authName'); if(w) w.textContent=accountName();
-      const er=$('#authEditRow'); if(er) er.hidden=true;
-    }
+    const w=$('#authName'); if(w) w.textContent=accountName();
+    const er=$('#authEditRow'); if(er) er.hidden=true;
   }else{
     btn.textContent='Log in';
-    if(form){ form.hidden=false; setAuthMode(authMode); }
-    if(out) out.hidden=true;
   }
 }
 const USER_RE=/^[A-Za-z0-9_]{3,20}$/;
@@ -480,8 +473,16 @@ function resetAuthEye(){
   if(p) p.type='password';
   if(b){ b.innerHTML=EYE_OPEN; b.setAttribute('aria-pressed','false'); b.setAttribute('aria-label','Show password'); b.title='Show password'; }
 }
-function openAuth(){ const d=$('#authDialog'); if(!d) return; const e=$('#authErr'); if(e) e.textContent=''; resetAuthEye(); setAccountUI(); d.hidden=false; }
+function openAuth(){ const d=$('#authDialog'); if(!d) return; const e=$('#authErr'); if(e) e.textContent=''; resetAuthEye(); setAccountUI(); showAuthView(user?'out':'form'); d.hidden=false; }
 function closeAuth(){ const d=$('#authDialog'); if(d) d.hidden=true; }
+function showAuthView(which){
+  const form=$('#authForm'), rec=$('#authRecover'), rst=$('#authResetView'), out=$('#authOut');
+  if(form) form.hidden=which!=='form';
+  if(rec) rec.hidden=which!=='recover';
+  if(rst) rst.hidden=which!=='reset';
+  if(out) out.hidden=which!=='out';
+  if(which==='form') setAuthMode(authMode);
+}
 async function authGo(){
   const mode=authMode;
   const em=($('#authEmail')||{}).value||'', pw=($('#authPass')||{}).value||'';
@@ -527,8 +528,79 @@ async function saveNameEdit(){
   }
 }
 function clearAuthFields(){
-  const em=$('#authEmail'), pw=$('#authPass'), un=$('#authUser');
-  if(em) em.value=''; if(pw) pw.value=''; if(un) un.value='';
+  const em=$('#authEmail'), pw=$('#authPass'), un=$('#authUser'), re=$('#authRecEmail'), np=$('#authNewPass');
+  if(em) em.value=''; if(pw) pw.value=''; if(un) un.value=''; if(re) re.value=''; if(np) np.value='';
+}
+async function requestRecovery(){
+  const em=(($('#authRecEmail')||{}).value||'').trim();
+  const e=$('#authRecErr'); const fail=m=>{ if(e) e.textContent=m; };
+  if(!em){ fail('Enter your email first.'); return; }
+  const go=$('#authRecGo'); if(go){ go.disabled=true; go.textContent='Sending…'; }
+  try{
+    const r=await fetch(SB_AUTH+'/recover',{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:em})});
+    if(!r.ok){
+      const data=await r.json().catch(()=>null);
+      if(r.status===429) throw new Error('Too many requests — wait a minute and retry.');
+      throw new Error((data&&(data.msg||data.message||data.error_description))||('Request failed '+r.status));
+    }
+    showToast('Check your email for the reset link.');
+    showAuthView('form');
+  }catch(err){ fail((err&&err.message)||'Could not send reset link.'); }
+  finally{ if(go){ go.disabled=false; go.textContent='Send Reset Link'; } }
+}
+function parseRecoveryLink(){
+  try{
+    const h=(location.hash||'').replace(/^#/,'');
+    const hp=new URLSearchParams(h);
+    if(hp.get('type')==='recovery'&&hp.get('access_token')) return {session:{access_token:hp.get('access_token'),refresh_token:hp.get('refresh_token'),user:null}};
+    const q=new URLSearchParams(location.search||'');
+    if(q.get('type')==='recovery'&&q.get('token_hash')) return {tokenHash:q.get('token_hash')};
+  }catch(e){}
+  return null;
+}
+function cleanRecoveryUrl(){
+  try{ history.replaceState(null,'',location.pathname+location.search.replace(/[?&]token_hash=[^&]*(&type=[^&]*)?/,'').replace(/^&/,'?')); }catch(e){}
+  try{ if(location.hash) history.replaceState(null,'',location.pathname+location.search); }catch(e){}
+}
+async function enterRecoverySession(found){
+  try{
+    let session=found.session||null;
+    if(!session&&found.tokenHash){
+      const r=await fetch(SB_AUTH+'/verify',{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({token_hash:found.tokenHash,type:'recovery'})});
+      const data=await r.json().catch(()=>null);
+      if(!r.ok||!data||!data.access_token) throw new Error('expired');
+      session=data;
+    }
+    if(!session||!session.access_token) throw new Error('expired');
+    setSession(session);
+    cleanRecoveryUrl();
+    openAuthReset();
+  }catch(e){
+    cleanRecoveryUrl();
+    openAuth(); showAuthView('form');
+    const er=$('#authErr'); if(er) er.textContent='Reset link expired — request a fresh one.';
+  }
+}
+function openAuthReset(){
+  const d=$('#authDialog'); if(!d) return;
+  setAccountUI(); showAuthView('reset'); d.hidden=false;
+  const np=$('#authNewPass'); if(np) np.focus();
+}
+async function saveNewPassword(){
+  const np=$('#authNewPass');
+  const v=(np&&np.value||'');
+  const e=$('#authResetErr'); const fail=m=>{ if(e) e.textContent=m; };
+  if(!v||v.length<6){ fail('Password needs at least 6 characters.'); return; }
+  if(!sbSession){ fail('Session expired — request a fresh link.'); return; }
+  const go=$('#authSavePass'); if(go){ go.disabled=true; go.textContent='Saving…'; }
+  try{
+    const r=await fetch(SB_AUTH+'/user',{method:'PUT',headers:{apikey:SB_KEY,'Content-Type':'application/json',Authorization:'Bearer '+sbSession.access_token},body:JSON.stringify({password:v})});
+    const data=await r.json().catch(()=>null);
+    if(!r.ok) throw new Error((data&&(data.msg||data.message))||('Save failed '+r.status));
+    if(np) np.value='';
+    closeAuth(); showToast('Password updated — you are logged in.');
+  }catch(err){ fail((err&&err.message)||'Could not save password.'); }
+  finally{ if(go){ go.disabled=false; go.textContent='Save New Password'; } }
 }
 if(sb){
   const ab=$('#accountBtn'); if(ab) ab.addEventListener('click',openAuth);
@@ -551,9 +623,15 @@ if(sb){
   const acn=$('#authEditCancel'); if(acn) acn.addEventListener('click',closeNameEdit);
   const ao=$('#authOutBtn');
   if(ao) ao.addEventListener('click',async()=>{ try{ await sb.auth.signOut(); }catch(e){} });
+  const af=$('#authForgot'); if(af) af.addEventListener('click',()=>{ const e=$('#authRecErr'); if(e) e.textContent=''; showAuthView('recover'); });
+  const abl=$('#authBackLogin'); if(abl) abl.addEventListener('click',()=>showAuthView('form'));
+  const arg=$('#authRecGo'); if(arg) arg.addEventListener('click',requestRecovery);
+  const asp=$('#authSavePass'); if(asp) asp.addEventListener('click',saveNewPassword);
   const dlg=$('#authDialog');
   if(dlg) dlg.addEventListener('click',ev=>{ if(ev.target===dlg) closeAuth(); });
   setAccountUI();
+  const rec=parseRecoveryLink();
+  if(rec) enterRecoverySession(rec);
   sb.auth.onAuthStateChange(async(ev,session)=>{
     const prev=user;
     user=(session&&session.user)||null; profile=null;
@@ -561,7 +639,7 @@ if(sb){
       closeAuth(); clearAuthFields(); setAccountUI();
       try{ await loadCloud(); showToast('Welcome aboard, sailor.'); }
       catch(err){ showToast('Cloud unreachable — sailing locally.'); }
-    }else{ setAccountUI(); renderLock(); paint(); if(prev) showToast('Signed out — local copy kept.'); }
+    }else{ setAccountUI(); showAuthView('form'); renderLock(); paint(); if(prev) showToast('Signed out — local copy kept.'); }
   });
 }else{
   const ab=$('#accountBtn');

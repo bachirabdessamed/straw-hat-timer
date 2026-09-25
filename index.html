@@ -141,6 +141,26 @@
       <div class="auth-row">
         <button id="authGo">Log in</button>
       </div>
+      <button class="auth-link" id="authForgot">Forgot password?</button>
+    </div>
+    <div id="authRecover" hidden>
+      <p class="sub">Enter your email and we'll send a reset link.</p>
+      <input id="authRecEmail" type="email" placeholder="you@example.com" autocomplete="email" aria-label="Recovery email" />
+      <p class="auth-err" id="authRecErr" role="alert"></p>
+      <div class="auth-row">
+        <button id="authRecGo">Send Reset Link</button>
+      </div>
+      <button class="auth-link" id="authBackLogin">Back to login</button>
+    </div>
+    <div id="authResetView" hidden>
+      <p class="sub">Enter your new password below.</p>
+      <div class="pass-wrap">
+        <input id="authNewPass" type="password" placeholder="New password (min 6 characters)" autocomplete="new-password" aria-label="New password" />
+      </div>
+      <p class="auth-err" id="authResetErr" role="alert"></p>
+      <div class="auth-row">
+        <button id="authSavePass">Save New Password</button>
+      </div>
     </div>
     <div id="authOut" hidden>
       <p class="sub">Signed in as <strong id="authName"></strong> <button class="auth-edit" id="authEdit" title="Change username" aria-label="Change username">✎</button></p>

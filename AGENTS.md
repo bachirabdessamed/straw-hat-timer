@@ -45,7 +45,10 @@ Files: `index.html`, `style.css`, `script.js`, `assets/images/*.jpg`.
   `accountBtn`, `authDialog`, `authEmail`, `authPass`, `authUser`,
   `authGo`, `authTabIn`, `authTabUp`, `authErr`, `authName`, `authEdit`,
   `authEditRow`, `authEditInput`, `authEditSave`, `authEditCancel`,
-  `authEye`, `crewLock`. Rename on both sides or neither.
+  `authEye`, `authForgot`, `authRecover`, `authRecEmail`, `authRecErr`,
+  `authRecGo`, `authBackLogin`, `authResetView`, `authNewPass`,
+  `authResetErr`, `authSavePass`, `crewLock`. Rename on both sides or
+  neither.
 - Fonts are Nunito (+300) and Pirata One only. DotGothic16 and the
   dashed straw-ring decor were deliberately removed — don't reintroduce.
 
