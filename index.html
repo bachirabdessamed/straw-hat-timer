@@ -132,7 +132,10 @@
         <button id="authTabUp" role="tab" aria-selected="false">Sign up</button>
       </div>
       <input id="authEmail" type="email" placeholder="you@example.com" autocomplete="email" aria-label="Email" />
-      <input id="authPass" type="password" placeholder="Password (min 6 characters)" autocomplete="current-password" aria-label="Password" />
+      <div class="pass-wrap">
+        <input id="authPass" type="password" placeholder="Password (min 6 characters)" autocomplete="current-password" aria-label="Password" />
+        <button class="pass-eye" id="authEye" title="Show password" aria-label="Show password" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      </div>
       <input id="authUser" type="text" maxlength="20" placeholder="Username (optional, e.g. strawhat_joe)" autocomplete="username" aria-label="Username" hidden />
       <p class="auth-err" id="authErr" role="alert"></p>
       <div class="auth-row">

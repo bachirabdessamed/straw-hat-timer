@@ -473,7 +473,14 @@ function setAuthMode(m){
   if(uf) uf.hidden=authMode!=='up';
   if(go) go.textContent=authMode==='up'?'Sign up':'Log in';
 }
-function openAuth(){ const d=$('#authDialog'); if(!d) return; const e=$('#authErr'); if(e) e.textContent=''; setAccountUI(); d.hidden=false; }
+const EYE_OPEN='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_SHUT='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+function resetAuthEye(){
+  const p=$('#authPass'), b=$('#authEye');
+  if(p) p.type='password';
+  if(b){ b.innerHTML=EYE_OPEN; b.setAttribute('aria-pressed','false'); b.setAttribute('aria-label','Show password'); b.title='Show password'; }
+}
+function openAuth(){ const d=$('#authDialog'); if(!d) return; const e=$('#authErr'); if(e) e.textContent=''; resetAuthEye(); setAccountUI(); d.hidden=false; }
 function closeAuth(){ const d=$('#authDialog'); if(d) d.hidden=true; }
 async function authGo(){
   const mode=authMode;
@@ -529,6 +536,16 @@ if(sb){
   const ti=$('#authTabIn'); if(ti) ti.addEventListener('click',()=>setAuthMode('in'));
   const tu=$('#authTabUp'); if(tu) tu.addEventListener('click',()=>setAuthMode('up'));
   const go=$('#authGo'); if(go) go.addEventListener('click',()=>authGo());
+  const eye=$('#authEye');
+  if(eye) eye.addEventListener('click',()=>{
+    const p=$('#authPass'); if(!p) return;
+    const show=p.type==='password';
+    p.type=show?'text':'password';
+    eye.innerHTML=show?EYE_SHUT:EYE_OPEN;
+    eye.setAttribute('aria-pressed',show?'true':'false');
+    eye.setAttribute('aria-label',show?'Hide password':'Show password');
+    eye.title=show?'Hide password':'Show password';
+  });
   const ae=$('#authEdit'); if(ae) ae.addEventListener('click',openNameEdit);
   const asv=$('#authEditSave'); if(asv) asv.addEventListener('click',saveNameEdit);
   const acn=$('#authEditCancel'); if(acn) acn.addEventListener('click',closeNameEdit);
