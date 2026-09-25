@@ -7,6 +7,7 @@ ring.style.strokeDasharray=CIRC;
 let durations={focus:25*60,short:5*60,long:15*60};
 let mode='focus', remaining=durations.focus, running=false, timerId=null;
 let completed=0, cyclePos=0, soundOn=true;
+let user=null, profile=null, suppressPick=false;
 let crew='luffy';
 try{crew=localStorage.getItem('op-crew')||'luffy';}catch(e){}
 const CREWS={
@@ -241,7 +242,6 @@ renderTasks();applyCrew(crew,false);renderHeatmap();
    Logged in = localStorage stays as cache, Supabase is source of truth. */
 const SB_URL='https://gypeuocixgluetppiuxu.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cGV1b2NpeGdsdWV0cHBpdXh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyODQwMDYsImV4cCI6MjEwNTg2MDAwNn0.5QwdRzJqFEO3iXA9UBzGAOIRvQYCxKvwt2tHPagtRC4';
-let user=null, profile=null, suppressPick=false;
 let sbSession=null, authSubs=[], authRestored=false;
 function sbToken(){ return (sbSession&&sbSession.access_token)||SB_KEY; }
 async function sbq(p){ const r=await p; if(r.error) throw r.error; return r.data; }
