@@ -537,7 +537,7 @@ async function requestRecovery(){
   if(!em){ fail('Enter your email first.'); return; }
   const go=$('#authRecGo'); if(go){ go.disabled=true; go.textContent='Sending…'; }
   try{
-    const r=await fetch(SB_AUTH+'/recover',{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:em})});
+    const r=await fetch(SB_AUTH+'/recover?redirect_to='+encodeURIComponent('https://bachirabdessamed.github.io/straw-hat-timer/'),{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:em})});
     if(!r.ok){
       const data=await r.json().catch(()=>null);
       if(r.status===429) throw new Error('Too many requests — wait a minute and retry.');
