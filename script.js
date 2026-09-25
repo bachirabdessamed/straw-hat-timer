@@ -81,6 +81,26 @@ function renderSkulls(){
   }
 }
 function showToast(msg){toast.textContent=msg;toast.classList.add('show');clearTimeout(showToast._t);showToast._t=setTimeout(()=>toast.classList.remove('show'),3200);}
+
+/* ---- Clip audio (wav files, WebAudio chime as fallback) ---- */
+let alarmAudio=null, clickAudio=null;
+try{
+  alarmAudio=new Audio('./assets/alarm.wav'); alarmAudio.preload='auto';
+  clickAudio=new Audio('./assets/click.wav'); clickAudio.preload='auto';
+}catch(e){ alarmAudio=null; clickAudio=null; }
+async function playAlarm(){
+  if(!soundOn) return;
+  if(alarmAudio){
+    try{ alarmAudio.currentTime=0; await alarmAudio.play(); return; }
+    catch(e){ /* blocked autoplay or missing file: fall through to chime */ }
+  }
+  beep();
+}
+function playClick(){
+  if(!soundOn||!clickAudio) return;
+  try{ clickAudio.currentTime=0; const p=clickAudio.play(); if(p&&p.catch) p.catch(()=>{}); }
+  catch(e){}
+}
 function beep(){
   if(!soundOn)return;
   try{
@@ -101,7 +121,7 @@ function tick(){remaining-=1;if(remaining<=0){remaining=0;paint();finishSession(
 function start(){if(running)return;running=true;mainBtn.textContent='Drop anchor';paint();timerId=setInterval(tick,1000);}
 function pause(){running=false;clearInterval(timerId);mainBtn.textContent=remaining<durations[mode]&&remaining>0?'Keep sailing':'Set sail';paint();}
 function finishSession(skipped=false){
-  pause();beep();
+  pause();playAlarm();
   if(mode==='focus'){
     if(!skipped){completed++;try{localStorage.setItem('op-completed',String(completed));}catch(e){}recordVoyage();cloudSaveBerries();}
     cyclePos++;
@@ -117,6 +137,11 @@ $('#skipBtn').addEventListener('click',()=>finishSession(true));
 $('#resetBtn').addEventListener('click',()=>{remaining=durations[mode];pause();mainBtn.textContent='Set sail';paint();});
 $('#soundBtn').addEventListener('click',e=>{soundOn=!soundOn;e.target.textContent=soundOn?'Sound on':'Sound off';});
 document.querySelectorAll('.modes button').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode,true)));
+const CLICK_SEL=['#mainBtn','#skipBtn','#resetBtn','#soundBtn','#accountBtn','#authGo','#authRecGo','#authSavePass','#authClose','#authTabIn','#authTabUp','#promoSignup','#promoLater','.modes button','.crew-btn','#addBtn','.check','.name','.del','#authOutBtn'].join(',');
+document.addEventListener('click',e=>{
+  const t=e.target&&e.target.closest?e.target.closest(CLICK_SEL):null;
+  if(t) playClick();
+});
 [['#inFocus','focus',1,90],['#inShort','short',1,30],['#inLong','long',5,60]].forEach(([sel,key,lo,hi])=>{
   $(sel).addEventListener('change',e=>{
     let v=Math.max(lo,Math.min(hi,parseInt(e.target.value||'25',10)));

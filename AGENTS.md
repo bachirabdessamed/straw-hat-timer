@@ -1,7 +1,8 @@
 # Straw Hat Timer — agent notes
 
 Static single-page One Piece pomodoro. No build, no tests, no bundler.
-Files: `index.html`, `style.css`, `script.js`, `assets/images/*.jpg`.
+Files: `index.html`, `style.css`, `script.js`, `assets/images/*.jpg`,
+`assets/*.wav` (real WAV data — never rename `.wav` files to `.mp3`).
 
 ## Verify
 
